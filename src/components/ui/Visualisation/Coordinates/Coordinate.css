@@ -1,0 +1,23 @@
+.coord {
+  margin: 5px;
+  display: inline-flex;
+  flex-flow: row nowrap;
+}
+
+.coord > span {
+  display: flex;
+  height: 2em;
+  width: 2em;
+  justify-content: center;
+  align-items: center;
+}
+
+.axis {
+  font-style: bold;
+  color: white;
+  background-color: grey;
+}
+
+.coordvalue {
+  padding: 2px;
+}

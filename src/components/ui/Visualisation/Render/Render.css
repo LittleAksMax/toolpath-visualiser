@@ -1,0 +1,11 @@
+.render {
+  height: 80vh;
+  width: calc(75% - 5px);
+  overflow: hidden;
+}
+
+.render canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}

@@ -1,0 +1,21 @@
+.code-container {
+  display: flex;
+  flex-flow: column nowrap;
+}
+
+.preview {
+  overflow-y: auto;
+  overflow-x: auto;
+  position: absolute;
+  background-color: lightblue;
+  border-radius: 10px;
+  padding: 2px;
+  height: 100vh;
+  width: calc(25% - 4px);
+  right: 0;
+  top: 0;
+}
+
+.preview-heading {
+  font-style: bold;
+}
