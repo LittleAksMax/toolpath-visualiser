@@ -3,11 +3,12 @@
   grid-template-columns: 4;
   grid-template-rows: 3;
 
-  row-gap: 20px;
-  column-gap: 20px;
+  row-gap: 5px;
+  column-gap: 5px;
+  padding: 5px;
 
-  width: 80%;
-  height: 20vh;
+  width: calc(75% - 10px);
+  height: calc(20vh - 10px);
 }
 
 .cfp {
@@ -31,4 +32,7 @@
 }
 
 .panel {
+  padding: 5px;
+  border-radius: 5px;
+  background-color: lightgrey;
 }

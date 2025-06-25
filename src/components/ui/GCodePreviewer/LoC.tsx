@@ -10,6 +10,7 @@ const LoC: FC<LoCProps> = ({ lineNo, line }) => {
   return (
     <code className='loc'>
       <span className='lineno'>[{lineNo}]</span>
+      &nbsp;
       <span className='line'>{line}</span>
     </code>
   );
