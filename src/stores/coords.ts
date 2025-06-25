@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 export type ChangeCoordType = (val: number) => void;
 
-interface CoordState {
+export interface CoordState {
   x: number;
   y: number;
   z: number;

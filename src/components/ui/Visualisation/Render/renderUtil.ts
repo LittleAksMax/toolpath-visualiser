@@ -57,7 +57,7 @@ export const setupScene = (
 
   scene.add(cone);
 
-  // --- View Cube Setup ---
+  // view cube
   const cubeScene = new Scene();
   const viewCube = new Mesh(
     new BoxGeometry(2, 2, 2),

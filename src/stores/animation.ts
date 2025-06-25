@@ -2,12 +2,18 @@ import { create } from 'zustand';
 
 export type SetAccelerationType = (acceleration: number) => void;
 export type SetAnimationSpeedMultiplierType = (speed: number) => void;
+export type ToggleSimulationType = () => void;
+export type NextLineType = () => void;
 
 interface AnimationState {
   accel: number;
   setAccel: SetAccelerationType;
   animSpeedMul: number;
   setAnimSpeedMul: SetAnimationSpeedMultiplierType;
+  sim: boolean;
+  toggleSim: ToggleSimulationType;
+  line: number;
+  nextLine: NextLineType;
 }
 
 export const useAnimationStore = create<AnimationState>((set) => ({
@@ -15,4 +21,8 @@ export const useAnimationStore = create<AnimationState>((set) => ({
   setAccel: (acceleration) => set((_) => ({ accel: acceleration })),
   animSpeedMul: 1,
   setAnimSpeedMul: (speed) => set((_) => ({ animSpeedMul: speed })),
+  sim: false,
+  toggleSim: () => set((state) => ({ sim: !state.sim })),
+  line: 0,
+  nextLine: () => set((state) => ({ line: state.line + 1 })),
 }));

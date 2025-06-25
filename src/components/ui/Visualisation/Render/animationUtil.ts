@@ -1,10 +1,7 @@
-import { SetPositioningType, SetUnitsType } from '../../../../stores/tool';
+import { CoordState } from '../../../../stores/coords';
+import { ToolState } from '../../../../stores/tool';
 
-export const interpretCommand = (
-  line: string,
-  setUnits: SetUnitsType,
-  setPositioning: SetPositioningType,
-) => {
+export const interpretCommand = (line: string, t: ToolState, c: CoordState) => {
   const s = line.startsWith; // for simplicity
 
   // all these moves are unactionable
@@ -20,19 +17,21 @@ export const interpretCommand = (
   // NOTE: I'm assuming no coordinate system changes G54-59.3
   // NOTE: I'm assuming G commands aren't combined
   // NOTE: I'm assuming no spiral G2/G3 commands
+  // NOTE: I'm assuming I,J and I,K and J,K must match the rotation plane
 
   if (s('G20')) {
     // sets units to inches
-    setUnits('in');
+    t.setUnits('in');
   } else if (s('G21')) {
     // sets units to mm
-    setUnits('mm');
+    t.setUnits('mm');
   } else if (s('G90')) {
-    setPositioning('abs');
+    t.setPos('abs');
   } else if (s('G91')) {
-    setPositioning('inc');
+    t.setPos('inc');
   } else if (s('G0')) {
     // rapid move
+    handleG0(t, c);
   } else if (s('G1')) {
     // linear interpolation
     // X, Y, Z
@@ -47,5 +46,13 @@ export const interpretCommand = (
     // X, Y, Z
     // I, J, K (relative offset to the arc's start point)
     // F specified for tangential velocity
+  }
+};
+
+const handleG0 = (t: ToolState, _: CoordState) => {
+  if (t.pos === 'abs') {
+    // absolute move
+  } else {
+    // incremental/relative move
   }
 };

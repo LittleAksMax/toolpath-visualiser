@@ -8,7 +8,7 @@ export type Positioning = 'inc' | 'abs';
 export type SetPositioningType = (positioning: Positioning) => void;
 export type SetFeedRateType = (feedRate: number) => void;
 
-interface ToolState {
+export interface ToolState {
   x: number;
   y: number;
   z: number; // TODO: translation from movement
