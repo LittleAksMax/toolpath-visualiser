@@ -13,6 +13,9 @@ I will use
 [this blog post](https://dev.to/omher/how-to-start-using-react-and-threejs-in-a-few-minutes-2h6g)
 to get started with using [three.js](https://threejs.org/).
 
+Then I will use the
+[examples given on the threejs website](https://threejs.org/examples/).
+
 ## zustand
 
 I will use

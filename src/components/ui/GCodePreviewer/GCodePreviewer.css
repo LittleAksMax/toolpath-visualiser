@@ -1,6 +1,8 @@
 .code-container {
+  font-size: 12pt;
   display: flex;
   flex-flow: column nowrap;
+  cursor: pointer;
 }
 
 .preview {

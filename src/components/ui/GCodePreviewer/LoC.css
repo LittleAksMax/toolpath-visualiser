@@ -5,3 +5,7 @@
   min-width: 4rem;
   text-align: right;
 }
+
+.highlighted {
+  color: orange;
+}

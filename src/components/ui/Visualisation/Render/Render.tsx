@@ -1,50 +1,96 @@
-import { FC, useEffect, useRef } from 'react';
+import { FC, useCallback, useEffect, useRef } from 'react';
 import {
-  Scene,
+  AxesHelper,
+  GridHelper,
+  OrthographicCamera,
   PerspectiveCamera,
+  Scene,
   WebGLRenderer,
-  BoxGeometry,
-  MeshBasicMaterial,
-  Mesh,
 } from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import './Render.css';
+import { disposeMaterial, setupScene } from './renderUtil';
+import { useViewStore } from '../../../../stores/view';
 
 const Render: FC = () => {
-  const refContainer = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const scene = new Scene();
-    const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
-    const renderer = new WebGLRenderer();
-    // document.body.appendChild( renderer.domElement );
-    // use ref as a mount point of the Three.js scene instead of the document.body
+  const { axes, grid } = useViewStore();
 
-    if (refContainer.current) {
-      refContainer.current.appendChild(renderer.domElement);
+  // TODO: disposal of objects
+  // refs for components
+  const sceneRef = useRef<Scene>(null!);
+  const rendererRef = useRef<WebGLRenderer>(null!);
+  const controlsRef = useRef<OrbitControls>(null!);
+  const cameraRef = useRef<PerspectiveCamera | OrthographicCamera>(null!);
+  const axesRef = useRef<AxesHelper | null>(null);
+  const gridRef = useRef<GridHelper | null>(null);
+
+  const containerRef = useCallback((container: HTMLDivElement | null) => {
+    if (!container || sceneRef.current) {
+      return;
     }
 
-    const width = refContainer.current!.clientWidth;
-    const height = refContainer.current!.clientHeight;
-    renderer.setSize(width, height);
-    camera.aspect = width / height;
+    // create all scene components
+    const scene = new Scene();
+    sceneRef.current = scene;
+
+    const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
+    // camera setup
+    camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
+    cameraRef.current = camera;
 
-    const geometry = new BoxGeometry(1, 1, 1);
-    const material = new MeshBasicMaterial({ color: 0x00ff00 });
-    const cube = new Mesh(geometry, material);
-    scene.add(cube);
-    camera.position.z = 5;
+    const renderer = new WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+    rendererRef.current = renderer;
 
-    const animate = () => {
-      requestAnimationFrame(animate);
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
-      renderer.render(scene, camera);
-    };
+    // Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.rotateSpeed = 3;
+    controlsRef.current = controls;
 
-    animate();
+    setupScene(scene, renderer, camera, controls);
   }, []);
 
-  return <div className='render' ref={refContainer}></div>;
+  // setup axes
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    if (axes && !axesRef.current) {
+      const helper = new AxesHelper(100);
+      scene.add(helper);
+      axesRef.current = helper;
+    } else if (!axes && axesRef.current) {
+      scene.remove(axesRef.current);
+      axesRef.current.geometry.dispose();
+      disposeMaterial(axesRef.current.material);
+      axesRef.current = null;
+    }
+  }, [axes]);
+
+  // setup grid
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+
+    if (grid && !gridRef.current) {
+      const helper = new GridHelper(200, 16);
+      helper.material.transparent = true;
+      helper.material.opacity = 0.25;
+      helper.rotateX(Math.PI / 2);
+      scene.add(helper);
+      gridRef.current = helper;
+    } else if (!grid && gridRef.current) {
+      scene.remove(gridRef.current);
+      gridRef.current.geometry.dispose();
+      disposeMaterial(gridRef.current.material);
+      gridRef.current = null;
+    }
+  }, [grid]);
+
+  return <div className='render' ref={containerRef}></div>;
 };
 
 export default Render;
