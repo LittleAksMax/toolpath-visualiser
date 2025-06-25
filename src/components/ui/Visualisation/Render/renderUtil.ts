@@ -2,44 +2,47 @@ import {
   WebGLRenderer,
   Scene,
   PerspectiveCamera,
-  OrthographicCamera,
   Mesh,
   MeshBasicMaterial,
   Material,
   ConeGeometry,
+  BoxGeometry,
+  Camera,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 export const setupCamera = (
-  ortho: boolean,
+  camera: PerspectiveCamera, // NOTE: haven't implemented ortho camera
   width: number,
   height: number,
-): PerspectiveCamera | OrthographicCamera => {
-  if (ortho) {
-    const camera = new OrthographicCamera(
-      width / -2,
-      width / 2,
-      height / 2,
-      height / -2,
-      1,
-      1000,
-    );
+): PerspectiveCamera => {
+  camera.aspect = width / height;
+  camera.lookAt(0, 0, 0);
+  camera.position.set(200, 200, 200);
+  camera.up.set(0, 0, 1);
+  camera.updateProjectionMatrix();
+  return camera;
+};
 
-    return camera;
-  } else {
-    const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
-    // camera setup
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-    return camera;
-  }
+export const setupControls = (
+  camera: Camera,
+  renderer: WebGLRenderer,
+): OrbitControls => {
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.1;
+  controls.update();
+
+  return controls;
 };
 
 export const setupScene = (
   scene: Scene,
   renderer: WebGLRenderer,
-  camera: PerspectiveCamera | OrthographicCamera,
+  camera: PerspectiveCamera,
   controls: OrbitControls,
+  width: number,
+  height: number,
 ) => {
   const geometry = new ConeGeometry(2, 8, 8);
 
@@ -54,15 +57,39 @@ export const setupScene = (
 
   scene.add(cone);
 
-  camera.lookAt(0, 0, 0);
-  camera.position.set(200, 200, 200);
-  camera.up.set(0, 0, 1); // set Z axis as the vertical
+  // --- View Cube Setup ---
+  const cubeScene = new Scene();
+  const viewCube = new Mesh(
+    new BoxGeometry(2, 2, 2),
+    new MeshBasicMaterial({ color: 0x888888, wireframe: true }),
+  );
+  cubeScene.add(viewCube);
+  const cubeCamera = new PerspectiveCamera(50, 1, 0.1, 1000);
 
   const animate = () => {
     requestAnimationFrame(animate);
 
     controls.update();
+
+    // render main scene
+    renderer.setViewport(0, 0, width, height);
+    renderer.clear();
     renderer.render(scene, camera);
+
+    // render view cube in corner
+    const size = Math.min(width, height) * 0.2;
+    renderer.clearDepth();
+    renderer.setScissorTest(true);
+    renderer.setScissor(width - size - 10, 10, size, size);
+    renderer.setViewport(width - size - 10, 10, size, size);
+
+    // sync orientation
+    cubeCamera.position.copy(camera.position).normalize().multiplyScalar(5);
+    cubeCamera.up.copy(camera.up);
+    cubeCamera.lookAt(0, 0, 0);
+    renderer.render(cubeScene, cubeCamera);
+
+    renderer.setScissorTest(false);
   };
 
   animate();
