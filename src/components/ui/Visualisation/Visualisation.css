@@ -1,6 +1,6 @@
 .visualisation {
   position: relative; /* for hovering the coordinates on top to the render */
-  width: 100%;
-  height: 80vh;
+  width: 70%;
+  height: 70vh;
   overflow: hidden;
 }

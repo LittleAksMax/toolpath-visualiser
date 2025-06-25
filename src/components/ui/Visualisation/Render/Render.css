@@ -1,6 +1,6 @@
 .render {
   height: 80vh;
-  width: calc(75% - 5px);
+  width: calc(70% - 5px);
   overflow: hidden;
 }
 

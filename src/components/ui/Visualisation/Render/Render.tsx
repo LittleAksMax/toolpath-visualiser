@@ -15,9 +15,13 @@ import {
   setupScene,
 } from './renderUtil';
 import { useViewStore } from '../../../../stores/view';
+import { useGCodeStore } from '../../../../stores/code';
+// import { useToolState } from '../../../../stores/tool';
 
 const Render: FC = () => {
   const { axes, grid } = useViewStore();
+  const { gcodeLines } = useGCodeStore();
+  // const { setRotPlane, setUnits, setPos } = useToolState();
 
   // refs for components
   const sceneRef = useRef<Scene>(null!);
@@ -37,13 +41,14 @@ const Render: FC = () => {
       container.appendChild(renderer.domElement);
       rendererRef.current = renderer;
 
-      // camera: placeholder aspect of 1, real values set in setupCamera
+      // camera
       const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
       cameraRef.current = camera;
 
       // container-based setup
       const width = container.clientWidth;
       const height = container.clientHeight;
+
       // position & projection
       setupCamera(camera, width, height);
 
@@ -53,6 +58,18 @@ const Render: FC = () => {
       // controls
       const controls = setupControls(camera, renderer);
       controlsRef.current = controls;
+
+      // NOTE: this is a hacky solution, but it works
+      if (axes) {
+        const helper = new AxesHelper(100);
+        scene.add(helper);
+        axesRef.current = helper;
+      } else if (!axes) {
+        scene.remove(axesRef.current!);
+        axesRef.current!.geometry.dispose();
+        disposeMaterial(axesRef.current!.material);
+        axesRef.current = null;
+      }
 
       // user-defined scene build
       setupScene(scene, renderer, camera, controls, width, height);
@@ -74,6 +91,9 @@ const Render: FC = () => {
       rendererRef.current = undefined!;
       controlsRef.current = undefined!;
     }
+
+    // to avoid warning from hacky solution above:
+    // eslint-disable-next-line
   }, []);
 
   // setup axes
@@ -112,6 +132,12 @@ const Render: FC = () => {
       gridRef.current = null;
     }
   }, [grid]);
+
+  // update drawing when the code changes
+  useEffect(() => {
+    console.debug('Code changed!');
+  }, [gcodeLines]);
+
   return <div className='render' ref={containerRef}></div>;
 };
 

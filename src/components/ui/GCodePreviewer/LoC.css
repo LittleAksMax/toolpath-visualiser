@@ -6,6 +6,10 @@
   text-align: right;
 }
 
-.highlighted {
+.highlighted-act {
   color: orange;
+}
+
+.highlighted-unact {
+  color: #ff2230;
 }
