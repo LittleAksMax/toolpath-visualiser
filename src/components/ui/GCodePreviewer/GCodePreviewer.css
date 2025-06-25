@@ -1,0 +1,8 @@
+.code-container {
+  display: flex;
+  flex-flow: column wrap;
+  height: 100%;
+  width: 40vw;
+  overflow-y: auto;
+  overflow-x: auto;
+}

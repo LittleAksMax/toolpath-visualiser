@@ -5,7 +5,7 @@ import Render from './Render/Render';
 
 const Visualisation: FC = () => {
   return (
-    <div>
+    <div className='visualisation'>
       <Render />
       <Coordinates />
       <Orientation />

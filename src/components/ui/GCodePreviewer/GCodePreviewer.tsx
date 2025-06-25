@@ -1,14 +1,15 @@
 import { FC } from 'react';
 import { useGCodeStore } from '../../../stores/code';
 import LoC from './LoC';
+import './GCodePreviewer.css';
 
 const GCodePreviewer: FC = () => {
   const { gcodeLines } = useGCodeStore();
 
   return (
-    <div>
+    <div className='code-container'>
       {gcodeLines.map((line, idx) => (
-        <LoC lineNo={idx} line={line} />
+        <LoC key={idx} lineNo={idx} line={line} />
       ))}
     </div>
   );

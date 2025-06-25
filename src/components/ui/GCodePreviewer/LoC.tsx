@@ -1,4 +1,5 @@
 import { FC } from 'react';
+import './LoC.css';
 
 interface LoCProps {
   lineNo: number;
@@ -7,10 +8,10 @@ interface LoCProps {
 
 const LoC: FC<LoCProps> = ({ lineNo, line }) => {
   return (
-    <span>
-      <span>[{lineNo}]</span>
-      <span>{line}</span>
-    </span>
+    <code className='loc'>
+      <span className='lineno'>[{lineNo}]</span>
+      <span className='line'>{line}</span>
+    </code>
   );
 };
 
