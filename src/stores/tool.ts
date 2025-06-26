@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 
-export type RotationPlane = 'XY' | 'YZ' | 'XZ';
+export type RotationPlane = 'XY' | 'YZ' | 'ZX';
 export type SetRotationPlaneType = (rotationPlane: RotationPlane) => void;
 export type Units = 'mm' | 'in';
 export type SetUnitsType = (units: Units) => void;
 export type Positioning = 'inc' | 'abs';
 export type SetPositioningType = (positioning: Positioning) => void;
 export type SetFeedRateType = (feedRate: number) => void;
+export type FeedRateMode = 'reg' | 'inv';
+export type SetFeedRateModeType = (mode: FeedRateMode) => void;
 
 export interface ToolState {
   x: number;
@@ -20,9 +22,11 @@ export interface ToolState {
   setPos: SetPositioningType;
   feed: number;
   setFeed: SetFeedRateType;
+  feedMode: FeedRateMode;
+  setFeedMode: SetFeedRateModeType;
 }
 
-export const useToolState = create<ToolState>((set) => ({
+export const useTool = create<ToolState>((set) => ({
   x: 0,
   y: 0,
   z: 0,
@@ -37,4 +41,6 @@ export const useToolState = create<ToolState>((set) => ({
   setPos: (positioning: Positioning) => set((_) => ({ pos: positioning })),
   feed: 0, // must be set before moving
   setFeed: (feedRate: number) => set((_) => ({ feed: feedRate })),
+  feedMode: 'reg',
+  setFeedMode: (mode: FeedRateMode) => set((_) => ({ feedMode: mode })),
 }));

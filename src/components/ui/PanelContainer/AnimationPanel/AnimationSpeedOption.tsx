@@ -1,6 +1,10 @@
 import { FC } from 'react';
 import { useAnimationStore } from '../../../../stores/animation';
 
+/**
+ *
+ * @deprecated
+ */
 const AnimationSpeedOption: FC = () => {
   const { animSpeedMul, setAnimSpeedMul } = useAnimationStore();
 

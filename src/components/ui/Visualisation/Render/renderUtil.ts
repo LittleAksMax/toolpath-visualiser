@@ -5,11 +5,13 @@ import {
   Mesh,
   MeshBasicMaterial,
   Material,
-  ConeGeometry,
   BoxGeometry,
   Camera,
+  Clock,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { createAnimator } from './animator';
+import Tool from './Tool';
 
 export const setupCamera = (
   camera: PerspectiveCamera, // NOTE: haven't implemented ortho camera
@@ -18,7 +20,7 @@ export const setupCamera = (
 ): PerspectiveCamera => {
   camera.aspect = width / height;
   camera.lookAt(0, 0, 0);
-  camera.position.set(200, 200, 200);
+  camera.position.set(10, 10, 10);
   camera.up.set(0, 0, 1);
   camera.updateProjectionMatrix();
   return camera;
@@ -36,27 +38,10 @@ export const setupControls = (
   return controls;
 };
 
-export const setupScene = (
-  scene: Scene,
-  renderer: WebGLRenderer,
-  camera: PerspectiveCamera,
-  controls: OrbitControls,
-  width: number,
-  height: number,
-) => {
-  const geometry = new ConeGeometry(2, 8, 8);
-
-  const material = new MeshBasicMaterial({
-    color: 0x0000ff,
-    transparent: true,
-    opacity: 0.5,
-  });
-  const cone = new Mesh(geometry, material);
-  cone.rotateX(-Math.PI / 2);
-  cone.position.set(0, 0, 4);
-
-  scene.add(cone);
-
+export const setupViewCube = (): {
+  cubeScene: Scene;
+  cubeCamera: PerspectiveCamera;
+} => {
   // view cube
   const cubeScene = new Scene();
   const viewCube = new Mesh(
@@ -66,31 +51,45 @@ export const setupScene = (
   cubeScene.add(viewCube);
   const cubeCamera = new PerspectiveCamera(50, 1, 0.1, 1000);
 
-  const animate = () => {
-    requestAnimationFrame(animate);
+  return { cubeScene, cubeCamera };
+};
 
-    controls.update();
+export const setupTool = (scene: Scene): Tool => {
+  const cone = new Tool();
 
-    // render main scene
-    renderer.setViewport(0, 0, width, height);
-    renderer.clear();
-    renderer.render(scene, camera);
+  scene.add(cone);
 
-    // render view cube in corner
-    const size = Math.min(width, height) * 0.2;
-    renderer.clearDepth();
-    renderer.setScissorTest(true);
-    renderer.setScissor(width - size - 10, 10, size, size);
-    renderer.setViewport(width - size - 10, 10, size, size);
+  return cone;
+};
 
-    // sync orientation
-    cubeCamera.position.copy(camera.position).normalize().multiplyScalar(5);
-    cubeCamera.up.copy(camera.up);
-    cubeCamera.lookAt(0, 0, 0);
-    renderer.render(cubeScene, cubeCamera);
+export const setupClock = (): Clock => {
+  return new Clock();
+};
 
-    renderer.setScissorTest(false);
-  };
+export const setupScene = (
+  scene: Scene,
+  renderer: WebGLRenderer,
+  camera: PerspectiveCamera,
+  controls: OrbitControls,
+  cubeScene: Scene,
+  cubeCamera: PerspectiveCamera,
+  tool: Tool,
+  width: number,
+  height: number,
+  clock: Clock,
+) => {
+  const animate = createAnimator(
+    scene,
+    renderer,
+    camera,
+    controls,
+    cubeScene,
+    cubeCamera,
+    tool,
+    width,
+    height,
+    clock,
+  );
 
   animate();
 };

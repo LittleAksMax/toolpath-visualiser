@@ -10,7 +10,7 @@ const Coordinate: FC<CoordinateProps> = ({ axis, val }: CoordinateProps) => {
   return (
     <div className='coord'>
       <span className='axis'>{axis}</span>
-      <span className='coordvalue'>{val}</span>
+      <span className='coordvalue'>{val.toPrecision(5)}</span>
     </div>
   );
 };

@@ -1,14 +1,14 @@
 import { FC } from 'react';
-import AccelerationOption from './AccelerationOption';
-import AnimationSpeedOption from './AnimationSpeedOption';
+// import AccelerationOption from './AccelerationOption';
+// import AnimationSpeedOption from './AnimationSpeedOption';
 import SimulationController from './SimulationController';
 
 const AnimationPanel: FC = () => {
   return (
     <div>
-      <AccelerationOption />
+      {/* <AccelerationOption /> */}
       <SimulationController />
-      <AnimationSpeedOption />
+      {/* <AnimationSpeedOption /> */}
     </div>
   );
 };

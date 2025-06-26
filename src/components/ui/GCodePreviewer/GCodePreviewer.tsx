@@ -1,12 +1,21 @@
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import LoC from './LoC';
 import './GCodePreviewer.css';
-import { useGCodeFile } from '../../../stores/code';
+import { useCursor, useGCodeFile } from '../../../stores/code';
 
 const GCodePreviewer: FC = () => {
   const { lines } = useGCodeFile();
+  const { sim, line } = useCursor();
   const [highlighted, setHighlighted] = useState<number | null>(null);
   // TODO: button implementations
+
+  // in active simulations, we want to set the
+  useEffect(() => {
+    if (sim) {
+      setHighlighted(line);
+    }
+  }, [sim, line]);
+
   return (
     <div className='preview'>
       <div className='preview-head'>
@@ -15,11 +24,11 @@ const GCodePreviewer: FC = () => {
         <button disabled>Cancel</button>
       </div>
       <div className='code-container'>
-        {lines.map((line, idx) => (
+        {lines.map((codeLine, idx) => (
           <LoC
             key={idx}
             lineNo={idx}
-            line={line}
+            line={codeLine}
             highlighted={highlighted === idx}
             highlight={() => setHighlighted(idx)}
           />

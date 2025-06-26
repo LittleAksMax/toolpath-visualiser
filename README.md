@@ -21,3 +21,8 @@ Then I will use the
 I will use
 [this blog post](https://dev.to/avt/understanding-zustand-a-beginners-guide-with-typescript-4jjo)
 to get started with [zustand](https://github.com/pmndrs/zustand/).
+
+## GRBL
+
+The Github repository is a relatively useful reference, along with
+[this website](https://cncphilosophy.com/grbl-g-code-commands-list/)

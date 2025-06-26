@@ -6,13 +6,13 @@
 
 .coord > span {
   display: flex;
-  height: 2em;
-  width: 2em;
+  height: 2rem;
   justify-content: center;
   align-items: center;
 }
 
 .axis {
+  width: 2rem;
   font-style: bold;
   color: white;
   background-color: grey;
@@ -20,4 +20,5 @@
 
 .coordvalue {
   padding: 2px;
+  width: 8rem;
 }

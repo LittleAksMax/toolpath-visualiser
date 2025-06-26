@@ -1,9 +1,11 @@
 import { FC } from 'react';
 import { useAnimationStore } from '../../../../stores/animation';
 
-interface AccelerationOptionType {}
-
-const AccelerationOption: FC<AccelerationOptionType> = () => {
+/**
+ *
+ * @deprecated
+ */
+const AccelerationOption: FC = () => {
   const { accel, setAccel } = useAnimationStore();
   return (
     <div>

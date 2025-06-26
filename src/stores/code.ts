@@ -3,6 +3,7 @@ import { create } from 'zustand';
 export type ChangeCodeType = (e: string[]) => void;
 export type NextLineType = () => void;
 export type ResetLineType = () => void;
+type ToggleSimulationType = () => void;
 
 interface GCodeState {
   lines: string[];
@@ -10,6 +11,8 @@ interface GCodeState {
 }
 
 interface GCodeCursor {
+  sim: boolean;
+  toggleSim: ToggleSimulationType;
   line: number;
   nextLine: NextLineType;
   resetLine: ResetLineType;
@@ -18,6 +21,8 @@ interface GCodeCursor {
 
 // cursor-store.ts – tiny, updates every tick
 export const useCursor = create<GCodeCursor>()((set) => ({
+  sim: false,
+  toggleSim: () => set((s) => ({ sim: !s.sim })),
   line: 0,
   nextLine: () => set((s) => ({ line: s.line + 1 })),
   resetLine: () => set({ line: 0 }),

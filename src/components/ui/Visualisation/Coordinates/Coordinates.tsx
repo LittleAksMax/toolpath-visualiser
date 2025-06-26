@@ -1,10 +1,10 @@
 import { FC } from 'react';
-import { useCoordStore } from '../../../../stores/coords';
+import { useCoords } from '../../../../stores/coords';
 import Coordinate from './Coordinate';
 import './Coordinates.css';
 
 const Coordinates: FC = () => {
-  const { x, y, z } = useCoordStore();
+  const { x, y, z } = useCoords();
 
   return (
     <div className='coords'>

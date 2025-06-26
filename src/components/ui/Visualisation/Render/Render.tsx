@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useRef } from 'react';
 import {
   AxesHelper,
+  Clock,
   GridHelper,
   PerspectiveCamera,
   Scene,
@@ -11,11 +12,14 @@ import './Render.css';
 import {
   disposeMaterial,
   setupCamera,
+  setupClock,
   setupControls,
   setupScene,
+  setupTool,
+  setupViewCube,
 } from './renderUtil';
 import { useViewStore } from '../../../../stores/view';
-// import { useToolState } from '../../../../stores/tool';
+import Tool from './Tool';
 
 const Render: FC = () => {
   const { axes, grid } = useViewStore();
@@ -25,6 +29,8 @@ const Render: FC = () => {
   const rendererRef = useRef<WebGLRenderer>(null!);
   const controlsRef = useRef<OrbitControls>(null!);
   const cameraRef = useRef<PerspectiveCamera>(null!);
+  const toolRef = useRef<Tool>(null!);
+  const clockRef = useRef<Clock>(null!);
   const axesRef = useRef<AxesHelper | null>(null);
   const gridRef = useRef<GridHelper | null>(null);
 
@@ -55,9 +61,20 @@ const Render: FC = () => {
       const controls = setupControls(camera, renderer);
       controlsRef.current = controls;
 
+      // set up view cube
+      const { cubeScene, cubeCamera } = setupViewCube();
+
+      // setup tool which we will then move
+      const tool = setupTool(scene);
+      toolRef.current = tool;
+
+      // setup clock
+      const clock = setupClock();
+      clockRef.current = clock;
+
       // NOTE: this is a hacky solution, but it works
       if (axes) {
-        const helper = new AxesHelper(100);
+        const helper = new AxesHelper(10);
         scene.add(helper);
         axesRef.current = helper;
       } else if (!axes) {
@@ -67,10 +84,21 @@ const Render: FC = () => {
         axesRef.current = null;
       }
 
-      // user-defined scene build
-      setupScene(scene, renderer, camera, controls, width, height);
+      // build scene
+      setupScene(
+        scene,
+        renderer,
+        camera,
+        controls,
+        cubeScene,
+        cubeCamera,
+        tool,
+        width,
+        height,
+        clock,
+      );
     } else {
-      // --- Cleanup on unmount ---
+      // cleanup on unmount
       const controls = controlsRef.current;
       const renderer = rendererRef.current;
 
@@ -98,7 +126,7 @@ const Render: FC = () => {
     if (!scene) return;
 
     if (axes && !axesRef.current) {
-      const helper = new AxesHelper(100);
+      const helper = new AxesHelper(5);
       scene.add(helper);
       axesRef.current = helper;
     } else if (!axes && axesRef.current) {
@@ -115,7 +143,7 @@ const Render: FC = () => {
     if (!scene) return;
 
     if (grid && !gridRef.current) {
-      const helper = new GridHelper(200, 16);
+      const helper = new GridHelper(20, 16);
       helper.material.transparent = true;
       helper.material.opacity = 0.25;
       helper.rotateX(Math.PI / 2);
@@ -133,53 +161,3 @@ const Render: FC = () => {
 };
 
 export default Render;
-
-// useEffect(() => {
-//   // create all scene components
-//   const scene = new Scene();
-//   const renderer = new WebGLRenderer({ alpha: true, antialias: true });
-//   const camera = new PerspectiveCamera(75, 1, 0.1, 1000);
-
-//   // container setup
-//   if (containerRef) {
-//     containerRef.current.appendChild(renderer.domElement);
-//   }
-
-//   // scene setup
-//   sceneRef.current = scene;
-
-//   // camera setup
-//   setupCamera(
-//     camera,
-//     containerRef.current.clientWidth,
-//     containerRef.current.clientHeight,
-//   );
-//   cameraRef.current = camera;
-
-//   // renderer setup
-//   renderer.setSize(
-//     containerRef.current.clientWidth,
-//     containerRef.current.clientHeight,
-//   );
-//   containerRef.current.appendChild(renderer.domElement);
-//   rendererRef.current = renderer;
-
-//   // controls
-//   const controls = setupControls(camera, renderer);
-//   controlsRef.current = controls;
-
-//   setupScene(
-//     scene,
-//     renderer,
-//     camera,
-//     controls,
-//     containerRef.current.clientWidth,
-//     containerRef.current.clientHeight,
-//   );
-
-//   return () => {
-//     controls.dispose();
-//     containerRef.current.removeChild(renderer.domElement);
-//     renderer.dispose();
-//   };
-// }, []);
