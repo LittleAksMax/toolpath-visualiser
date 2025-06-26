@@ -8,6 +8,7 @@ import {
   BoxGeometry,
   Camera,
   Clock,
+  Object3D,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { createAnimator } from './animator';
@@ -55,9 +56,13 @@ export const setupViewCube = (): {
 };
 
 export const setupTool = (scene: Scene): Tool => {
-  const cone = new Tool();
+  const offsetParent = new Object3D();
+  offsetParent.translateZ(Tool.Z_OFFSET);
+  scene.add(offsetParent);
 
-  scene.add(cone);
+  const cone = new Tool();
+  offsetParent.add(cone);
+  // we don't even need to add cone to the scene explicitly
 
   return cone;
 };

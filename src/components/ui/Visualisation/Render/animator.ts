@@ -116,7 +116,7 @@ export const createAnimator = (
         const t = Math.min(tProgress, 1);
 
         // linear interpolation
-        toolMesh.lerpVectors(start, end, t);
+        toolMesh.position.lerpVectors(start, end, t);
         coords.setVec(toolMesh.position);
 
         // since all movements take roughly 1 second, we wait until about 1 second
