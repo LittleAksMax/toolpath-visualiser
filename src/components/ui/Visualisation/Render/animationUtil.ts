@@ -28,6 +28,13 @@ export interface LinearMoveCommand extends Command {
 
 export interface CircularMoveCommand extends Command {
   type: CircularMoveCommandType;
+  x: number;
+  y: number;
+  z: number;
+  i: number;
+  j: number;
+  k: number;
+  f: number;
 }
 
 const handledNonMoveCommands = [
@@ -102,32 +109,31 @@ export const interpretCommand = (
         z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as LinearMoveCommand;
-  } else if (line.startsWith('G2')) {
-    // clockwise turn relative to set rotation plane
-    // X, Y, Z, I, J, K, F
-    if (t.rotPlane === 'XY') {
-    }
-    return {
-      type: 'G2',
-      x: extract(line, /X(\d+\.\d+)/, c.x),
-      y: extract(line, /Y(\d+\.\d+)/, c.y),
-      i: extract(line, /X(\d+\.\d+)/, 0),
-      j: extract(line, /Y(\d+\.\d+)/, 0),
-      f: extract(line, /F(\d+\.\d+)/, t.feed),
-    } as CircularMoveCommand;
-  } else if (line.startsWith('G3')) {
-    // counter-clockwise turn relative to set rotation plane
-    // X, Y, Z
-    // I, J, K (relative offset to the arc's start point)
-    // F specified for tangential velocity
-    return {
-      type: 'G3',
-      x: extract(line, /X(\d+\.\d+)/, c.x),
-      y: extract(line, /Y(\d+\.\d+)/, c.y),
-      i: extract(line, /X(\d+\.\d+)/, c.x),
-      j: extract(line, /Y(\d+\.\d+)/, c.y),
-      f: extract(line, /F(\d+\.\d+)/, t.feed),
-    } as CircularMoveCommand;
+  } else if (line.startsWith('G2') || line.startsWith('G3')) {
+    const type = line.substring(0, 2) as CircularMoveCommandType;
+
+    if (t.pos === 'abs')
+      return {
+        type,
+        x: extract(line, /X(\d+\.\d+)/, c.x),
+        y: extract(line, /Y(\d+\.\d+)/, c.y),
+        z: extract(line, /Z(\d+\.\d+)/, c.z),
+        i: extract(line, /I(\d+\.\d+)/, 0),
+        j: extract(line, /J(\d+\.\d+)/, 0),
+        k: extract(line, /K(\d+\.\d+)/, 0),
+        f: extract(line, /F(\d+\.\d+)/, t.feed),
+      } as CircularMoveCommand;
+    else
+      return {
+        type,
+        x: c.x + extract(line, /X(\d+\.\d+)/, 0),
+        y: c.y + extract(line, /Y(\d+\.\d+)/, 0),
+        z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
+        i: extract(line, /I(\d+\.\d+)/, 0),
+        j: extract(line, /J(\d+\.\d+)/, 0),
+        k: extract(line, /K(\d+\.\d+)/, 0),
+        f: extract(line, /F(\d+\.\d+)/, t.feed),
+      } as CircularMoveCommand;
   } else if (line.substring(0, 3) in handledNonMoveCommands) {
     // this looks, and is, horrible but trust the process
     const cmd = line.substring(0, 3);

@@ -2,7 +2,11 @@ import { Clock, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useCursor, useGCodeFile } from '../../../../stores/code';
 import { useTool } from '../../../../stores/tool';
-import { interpretCommand, LinearMoveCommand } from './animationUtil';
+import {
+  CircularMoveCommand,
+  interpretCommand,
+  LinearMoveCommand,
+} from './animationUtil';
 import { useCoords } from '../../../../stores/coords';
 import Tool from './Tool';
 
@@ -26,6 +30,11 @@ export const createAnimator = (
   let end = new Vector3();
   let distance = 0; // distance travelled in maneouvre to gauge time taken
   let tProgress = 0; // progress of current manoeuvre
+  let movementType: number; // track type of movement (G0,G1,G2,G3) so we know how to move
+
+  // fields specific for circular interpolation
+  // let radius: number; // for radius of arc
+  let centre: Vector3 = new Vector3(); // for centre of circle of arc
 
   const animate = () => {
     // state for execution
@@ -80,41 +89,94 @@ export const createAnimator = (
           tProgress = 0;
 
           if (cmd.type === 'G0') {
-            const mCmd = cmd as LinearMoveCommand;
+            const { x, y, z } = cmd as LinearMoveCommand;
             currentlyMoving = true;
             start.copy(toolMesh.position);
-            end.setX(mCmd.x);
-            end.setY(mCmd.y);
-            end.setZ(mCmd.z);
+            end.set(x, y, z);
 
             // get distance of linear movement
             distance = start.distanceTo(end);
+
+            movementType = 0;
           } else if (cmd.type === 'G1') {
-            const mCmd = cmd as LinearMoveCommand;
+            const { x, y, z } = cmd as LinearMoveCommand;
             start.copy(toolMesh.position);
 
-            end.setX(mCmd.x);
-            end.setY(mCmd.y);
-            end.setZ(mCmd.z);
-
+            end.set(x, y, z);
             // get distance of linear movement
             distance = start.distanceTo(end);
+
+            movementType = 1;
           } else if (cmd.type === 'G2') {
+            const { x, y, z, i, j, k } = cmd as CircularMoveCommand;
+
+            start.copy(toolMesh.position);
+            end.set(x, y, z);
+
+            switch (tool.rotPlane) {
+              case 'XY':
+                centre.setX(start.x + i);
+                centre.setY(start.y + j);
+                centre.setZ(start.z);
+                break;
+              case 'ZX':
+                centre.setX(start.x + i);
+                centre.setY(start.y);
+                centre.setZ(start.z + k);
+                break;
+              case 'YZ':
+                centre.setX(start.x);
+                centre.setY(start.y + j);
+                centre.setZ(start.z + k);
+                break;
+            }
+
+            movementType = 2;
           } else {
             // G3
+            const { x, y, z, i, j, k } = cmd as CircularMoveCommand;
+
+            start.copy(toolMesh.position);
+            end.set(x, y, z);
+
+            switch (tool.rotPlane) {
+              case 'XY':
+                centre.setX(start.x + i);
+                centre.setY(start.y + j);
+                centre.setZ(start.z);
+                break;
+              case 'ZX':
+                centre.setX(start.x + i);
+                centre.setY(start.y);
+                centre.setZ(start.z + k);
+                break;
+              case 'YZ':
+                centre.setX(start.x);
+                centre.setY(start.y + j);
+                centre.setZ(start.z + k);
+                break;
+            }
+
+            movementType = 3;
           }
         }
       }
 
       if (currentlyMoving) {
-        // normalise progress by distance so all moves take 1s keep
+        // normalise progress by distance so all moves take 0.5s keep
         // in mind we are completely ignoring feed rate (for simplicity)
-        tProgress += distance > 0 ? delta / distance : 1;
+        tProgress += distance > 0 ? (2 * delta) / distance : 1;
         const t = Math.min(tProgress, 1);
 
-        // linear interpolation
-        toolMesh.position.lerpVectors(start, end, t);
-        coords.setVec(toolMesh.position);
+        if (movementType === 0 || movementType === 1) {
+          // linear interpolation
+          toolMesh.position.lerpVectors(start, end, t);
+          coords.setVec(toolMesh.position);
+        } else {
+          // we should invert the direction for G2 and G3
+          // as G2 is clockwise, and G3 is counter-clockwise
+          // const directionMultiplier = movementType === 2 ? 1 : -1;
+        }
 
         // since all movements take roughly 1 second, we wait until about 1 second
         // has passed and then assume the manoeuvre is over
