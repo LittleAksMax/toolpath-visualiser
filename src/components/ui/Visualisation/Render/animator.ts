@@ -46,9 +46,7 @@ export const createAnimator = (
       toolMesh.resetPosition();
 
       // reset separate coordinates store
-      coords.setX(0);
-      coords.setY(0);
-      coords.setZ(0);
+      coords.reset();
     }
 
     // maxLine !== 0 ensures that there is a valid program loaded
@@ -62,6 +60,7 @@ export const createAnimator = (
 
         if (!cmd) {
           // move onto next command since it is clearly not needed
+          cursor.nextLine();
         }
         // set data about the drill
         else if (cmd.type === 'G17') tool.setRotPlane('XY');
@@ -105,8 +104,6 @@ export const createAnimator = (
             // G3
           }
         }
-
-        cursor.nextLine();
       }
 
       if (currentlyMoving) {

@@ -12,6 +12,7 @@ export interface CoordState {
   setY: ChangeCoordType;
   setZ: ChangeCoordType;
   setVec: ChangeCoordVecType;
+  reset: () => void;
 }
 
 export const useCoords = create<CoordState>((set) => ({
@@ -22,4 +23,5 @@ export const useCoords = create<CoordState>((set) => ({
   setY: (y: number) => set((_) => ({ y })),
   setZ: (z: number) => set((_) => ({ z })),
   setVec: (vec: Vector3) => set((_) => ({ x: vec.x, y: vec.y, z: vec.z })),
+  reset: () => set((_) => ({ x: 0, y: 0, z: 0 })),
 }));

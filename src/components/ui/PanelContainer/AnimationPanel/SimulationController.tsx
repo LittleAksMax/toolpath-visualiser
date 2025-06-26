@@ -1,11 +1,13 @@
 import { FC } from 'react';
 import './SimulationController.css';
 import { useCursor } from '../../../../stores/code';
+import { useCoords } from '../../../../stores/coords';
 
 interface SimulationControllerProps {}
 
 const SimulationController: FC<SimulationControllerProps> = () => {
   const { sim, toggleSim, line, resetLine, nextLine, maxLine } = useCursor();
+  const { reset } = useCoords();
 
   return (
     <div className='simcontrol'>
@@ -17,6 +19,7 @@ const SimulationController: FC<SimulationControllerProps> = () => {
       <button
         onClick={() => {
           resetLine(); // reset as required
+          reset();
           if (sim) toggleSim(); // stop simulation if playing
         }}
         disabled={line === 0}
