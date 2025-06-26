@@ -1,19 +1,20 @@
 import { FC } from 'react';
-import { ToggleSimulationType } from '../../../../stores/animation';
+import './SimulationController.css';
+import { useCursor } from '../../../../stores/code';
 
-interface SimulationControllerProps {
-  simulationPlaying: boolean;
-  toggleSimulation: ToggleSimulationType;
-}
+interface SimulationControllerProps {}
 
-const SimulationController: FC<SimulationControllerProps> = ({
-  simulationPlaying,
-  toggleSimulation,
-}) => {
+const SimulationController: FC<SimulationControllerProps> = () => {
+  const { line, resetLine, nextLine, maxLine } = useCursor();
+
   return (
-    <div>
-      <button onClick={toggleSimulation}>
-        {simulationPlaying ? 'Pause' : 'Play'}
+    <div className='simcontrol'>
+      <span>{line}</span>
+      <button onClick={nextLine} disabled={maxLine === line}>
+        &rsaquo;
+      </button>
+      <button onClick={resetLine} disabled={line === 0}>
+        Reset
       </button>
     </div>
   );

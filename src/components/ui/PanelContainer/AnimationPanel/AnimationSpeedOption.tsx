@@ -1,15 +1,9 @@
 import { FC } from 'react';
-import { SetAnimationSpeedMultiplierType } from '../../../../stores/animation';
+import { useAnimationStore } from '../../../../stores/animation';
 
-interface AnimationSpeedOptionProps {
-  speed: number;
-  setSpeed: SetAnimationSpeedMultiplierType;
-}
+const AnimationSpeedOption: FC = () => {
+  const { animSpeedMul, setAnimSpeedMul } = useAnimationStore();
 
-const AnimationSpeedOption: FC<AnimationSpeedOptionProps> = ({
-  speed,
-  setSpeed,
-}) => {
   return (
     <div>
       <div>
@@ -20,12 +14,12 @@ const AnimationSpeedOption: FC<AnimationSpeedOptionProps> = ({
           min={0.1}
           max={20}
           step={0.1}
-          value={speed}
+          value={animSpeedMul}
           onChange={(e) => {
-            setSpeed(parseFloat(e.target.value));
+            setAnimSpeedMul(parseFloat(e.target.value));
           }}
         />
-        <span>&times;{speed}</span>
+        <span>&times;{animSpeedMul}</span>
       </div>
     </div>
   );

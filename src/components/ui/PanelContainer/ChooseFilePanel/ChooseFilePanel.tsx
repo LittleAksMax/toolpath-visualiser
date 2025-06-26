@@ -1,15 +1,15 @@
 import { FC } from 'react';
-import { useGCodeStore } from '../../../../stores/code';
+import { useGCodeFile } from '../../../../stores/code';
 import { readCodeFile } from './codeReadUtil';
 
 const ChooseFilePanel: FC = () => {
-  const { changeCode } = useGCodeStore();
+  const { changeLines } = useGCodeFile();
   return (
     <div>
       <input
         type='file'
         accept='.gcode'
-        onChange={(e) => readCodeFile(e.target.files?.[0], changeCode)}
+        onChange={(e) => readCodeFile(e.target.files?.[0], changeLines)}
       />
     </div>
   );

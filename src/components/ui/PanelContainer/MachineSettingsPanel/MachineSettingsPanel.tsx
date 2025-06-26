@@ -4,6 +4,9 @@ import RadiusOption from './RadiusOption';
 import MachineTime from './MachineTime';
 import { useMachiningStore } from '../../../../stores/machining';
 
+/**
+ * @deprecated We are no longer taking these as inputs
+ */
 const MachineSettingsPanel: FC = () => {
   const { rot, setRot, rad, setRad } = useMachiningStore();
 

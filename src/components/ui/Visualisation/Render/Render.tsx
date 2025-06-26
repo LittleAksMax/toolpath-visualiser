@@ -15,13 +15,10 @@ import {
   setupScene,
 } from './renderUtil';
 import { useViewStore } from '../../../../stores/view';
-import { useGCodeStore } from '../../../../stores/code';
 // import { useToolState } from '../../../../stores/tool';
 
 const Render: FC = () => {
   const { axes, grid } = useViewStore();
-  const { gcodeLines } = useGCodeStore();
-  // const { setRotPlane, setUnits, setPos } = useToolState();
 
   // refs for components
   const sceneRef = useRef<Scene>(null!);
@@ -33,7 +30,6 @@ const Render: FC = () => {
 
   const containerRef = useCallback((container: HTMLDivElement | null) => {
     if (container) {
-      // --- Initialize scene, camera, renderer ---
       const scene = new Scene();
       sceneRef.current = scene;
 
@@ -132,11 +128,6 @@ const Render: FC = () => {
       gridRef.current = null;
     }
   }, [grid]);
-
-  // update drawing when the code changes
-  useEffect(() => {
-    console.debug('Code changed!');
-  }, [gcodeLines]);
 
   return <div className='render' ref={containerRef}></div>;
 };

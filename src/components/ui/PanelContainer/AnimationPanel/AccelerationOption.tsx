@@ -1,24 +1,19 @@
 import { FC } from 'react';
-import { SetAccelerationType } from '../../../../stores/animation';
+import { useAnimationStore } from '../../../../stores/animation';
 
-interface AccelerationOptionType {
-  acceleration: number;
-  setAcceleration: SetAccelerationType;
-}
+interface AccelerationOptionType {}
 
-const AccelerationOption: FC<AccelerationOptionType> = ({
-  acceleration,
-  setAcceleration,
-}) => {
+const AccelerationOption: FC<AccelerationOptionType> = () => {
+  const { accel, setAccel } = useAnimationStore();
   return (
     <div>
       <label htmlFor='accel'>Machine acceleration, units/s^2</label>
       <input
         name='accel'
         type='number'
-        value={acceleration}
+        value={accel}
         onChange={(e) => {
-          setAcceleration(parseInt(e.target.value));
+          setAccel(parseInt(e.target.value));
         }}
       />
     </div>

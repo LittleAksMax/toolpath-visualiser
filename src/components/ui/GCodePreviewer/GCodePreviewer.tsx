@@ -1,12 +1,11 @@
 import { FC, useState } from 'react';
-import { useGCodeStore } from '../../../stores/code';
 import LoC from './LoC';
 import './GCodePreviewer.css';
+import { useGCodeFile } from '../../../stores/code';
 
 const GCodePreviewer: FC = () => {
-  const { gcodeLines } = useGCodeStore();
+  const { lines } = useGCodeFile();
   const [highlighted, setHighlighted] = useState<number | null>(null);
-
   // TODO: button implementations
   return (
     <div className='preview'>
@@ -16,7 +15,7 @@ const GCodePreviewer: FC = () => {
         <button disabled>Cancel</button>
       </div>
       <div className='code-container'>
-        {gcodeLines.map((line, idx) => (
+        {lines.map((line, idx) => (
           <LoC
             key={idx}
             lineNo={idx}

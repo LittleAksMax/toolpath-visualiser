@@ -1,7 +1,7 @@
 import { FC } from 'react';
 import AnimationPanel from './AnimationPanel/AnimationPanel';
 import ViewPanel from './ViewPanel/ViewPanel';
-import MachineSettingsPanel from './MachineSettingsPanel/MachineSettingsPanel';
+// import MachineSettingsPanel from './MachineSettingsPanel/MachineSettingsPanel';
 import ChooseFilePanel from './ChooseFilePanel/ChooseFilePanel';
 import './PanelContainer.css';
 
@@ -11,9 +11,9 @@ const PanelContainer: FC = () => {
       <div className='cfp panel'>
         <ChooseFilePanel />
       </div>
-      <div className='msp panel'>
+      {/* <div className='msp panel'>
         <MachineSettingsPanel />
-      </div>
+      </div> */}
       <div className='vp panel'>
         <ViewPanel />
       </div>
