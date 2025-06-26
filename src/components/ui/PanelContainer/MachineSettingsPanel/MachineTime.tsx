@@ -1,7 +1,10 @@
 import { FC } from 'react';
 
+/**
+ *
+ * @deprecated
+ */
 const MachineTime: FC = () => {
-  // TODO: figure out machine time
   return (
     <div>
       <span>Machine time:</span>

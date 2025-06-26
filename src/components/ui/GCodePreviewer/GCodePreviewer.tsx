@@ -7,7 +7,6 @@ const GCodePreviewer: FC = () => {
   const { lines } = useGCodeFile();
   const { sim, line } = useCursor();
   const [highlighted, setHighlighted] = useState<number | null>(null);
-  // TODO: button implementations
 
   // in active simulations, we want to set the
   useEffect(() => {
@@ -20,8 +19,6 @@ const GCodePreviewer: FC = () => {
     <div className='preview'>
       <div className='preview-head'>
         <span className='preview-heading'>GCode Preview</span>
-        <button>Edit</button>
-        <button disabled>Cancel</button>
       </div>
       <div className='code-container'>
         {lines.map((codeLine, idx) => (

@@ -1,9 +1,5 @@
 import { create } from 'zustand';
 
-// TODO: find rotary options
-
-// NOTE: it's the developer's responsibility to ensure that the union
-//       for RotaryType matches the rotaryTypes list
 export type RotaryType = 'Auto';
 export const rotaryTypes: RotaryType[] = ['Auto'];
 export type SetRotaryType = (rotary: RotaryType) => void;

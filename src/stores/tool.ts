@@ -11,9 +11,6 @@ export type FeedRateMode = 'reg' | 'inv';
 export type SetFeedRateModeType = (mode: FeedRateMode) => void;
 
 export interface ToolState {
-  x: number;
-  y: number;
-  z: number; // TODO: translation from movement
   rotPlane: RotationPlane;
   setRotPlane: SetRotationPlaneType;
   units: Units;
@@ -27,9 +24,6 @@ export interface ToolState {
 }
 
 export const useTool = create<ToolState>((set) => ({
-  x: 0,
-  y: 0,
-  z: 0,
   rotPlane: 'XY',
   setRotPlane: (rotationPlane: RotationPlane) =>
     set((_) => ({
