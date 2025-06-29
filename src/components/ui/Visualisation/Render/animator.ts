@@ -25,12 +25,12 @@ export const createAnimator = (
   clock: Clock,
 ): Animator => {
   // local variables for keeping track
-  let currentlyMoving = false;
   let start = new Vector3();
   let end = new Vector3();
   let distance = 0; // distance travelled in maneouvre to gauge time taken
   let tProgress = 0; // progress of current manoeuvre
   let movementType: number; // track type of movement (G0,G1,G2,G3) so we know how to move
+  let currentlyMoving: boolean = false;
 
   // fields specific for circular interpolation
   // let radius: number; // for radius of arc
@@ -43,8 +43,6 @@ export const createAnimator = (
     const tool = useTool.getState();
     const coords = useCoords.getState();
 
-    requestAnimationFrame(animate);
-
     // since we are interpolating moves
     const delta = clock.getDelta();
     const lineNo = cursor.line;
@@ -55,14 +53,21 @@ export const createAnimator = (
       toolMesh.resetPosition();
 
       // reset separate coordinates store
-      coords.reset();
+      coords.setVec(toolMesh.position);
+
+      currentlyMoving = false;
     }
 
     // maxLine !== 0 ensures that there is a valid program loaded
     // and we don't waste time
+    // however, since we advance the line before finishing the move,
+    // we just check if we are currently moving as well
     if (cursor.sim && maxLine !== 0 && lineNo < maxLine) {
       // if not moving, then we want to execute the next command
       // and start moving
+      console.debug(
+        currentlyMoving + ' [' + lineNo + '] ' + code.lines[lineNo],
+      );
       if (!currentlyMoving) {
         const line = code.lines[lineNo];
         const cmd = interpretCommand(line, tool, coords);
@@ -90,7 +95,6 @@ export const createAnimator = (
 
           if (cmd.type === 'G0') {
             const { x, y, z } = cmd as LinearMoveCommand;
-            currentlyMoving = true;
             start.copy(toolMesh.position);
             end.set(x, y, z);
 
@@ -165,7 +169,7 @@ export const createAnimator = (
       if (currentlyMoving) {
         // normalise progress by distance so all moves take 0.5s keep
         // in mind we are completely ignoring feed rate (for simplicity)
-        tProgress += distance > 0 ? (2 * delta) / distance : 1;
+        tProgress += distance > 0 ? (4 * delta) / distance : 1;
         const t = Math.min(tProgress, 1);
 
         if (movementType === 0 || movementType === 1) {
@@ -176,6 +180,7 @@ export const createAnimator = (
           // we should invert the direction for G2 and G3
           // as G2 is clockwise, and G3 is counter-clockwise
           // const directionMultiplier = movementType === 2 ? 1 : -1;
+          // TODO: handle circular movements
         }
 
         // since all movements take roughly 1 second, we wait until about 1 second
@@ -186,6 +191,8 @@ export const createAnimator = (
         }
       }
     }
+
+    requestAnimationFrame(animate);
 
     // update controls
     controls.update();
