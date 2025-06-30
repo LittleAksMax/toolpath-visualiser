@@ -49,6 +49,13 @@ const handledNonMoveCommands = [
   'G94',
 ];
 
+const extract = (line: string, r: RegExp, fallback: number) => {
+  const matches = line.match(r);
+  // matches[1] since the whole string matching is matches[0]
+  // and then matches[1] is the capture group for the number itself
+  return matches ? parseFloat(matches[1]) : fallback;
+};
+
 export const interpretCommand = (
   line: string,
   t: ToolState,
@@ -69,75 +76,14 @@ export const interpretCommand = (
   // NOTE: I'm assuming no spiral G2/G3 commands
   // NOTE: I'm assuming I,J and I,K and J,K must match the rotation plane
 
-  const extract = (line: string, r: RegExp, fallback: number) => {
-    const matches = line.match(r);
-    // matches[1] since the whole string matching is matches[0]
-    // and then matches[1] is the capture group for the number itself
-    return matches ? parseFloat(matches[1]) : fallback;
-  };
+  if (line.startsWith('G0') || line.startsWith('G1')) {
+    const type = line.substring(0, 2) as LinearMoveCommandType;
 
-  if (line.startsWith('G0')) {
-    // rapid move
-    if (t.pos === 'abs') {
-      return {
-        type: 'G0',
-        x: extract(line, /X(-?\d+\.\d+)/, c.x),
-        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
-        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
-      } as LinearMoveCommand;
-    } else {
-      return {
-        type: 'G0',
-        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
-        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
-        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
-      } as LinearMoveCommand;
-    }
-  } else if (line.startsWith('G1')) {
-    // linear interpolation
-    // X, Y, Z, F
-    if (t.pos === 'abs') {
-      return {
-        type: 'G1',
-        x: extract(line, /X(-?\d+\.\d+)/, c.x),
-        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
-        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
-        f: extract(line, /F(\d+\.\d+)/, t.feed),
-      } as LinearMoveCommand;
-    } else {
-      return {
-        type: 'G1',
-        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
-        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
-        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
-        f: extract(line, /F(\d+\.\d+)/, t.feed),
-      } as LinearMoveCommand;
-    }
+    return getLinear(line, t, c, type);
   } else if (line.startsWith('G2') || line.startsWith('G3')) {
     const type = line.substring(0, 2) as CircularMoveCommandType;
 
-    if (t.pos === 'abs')
-      return {
-        type,
-        x: extract(line, /X(-?\d+\.\d+)/, c.x),
-        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
-        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
-        i: extract(line, /I(-?\d+\.\d+)/, 0),
-        j: extract(line, /J(-?\d+\.\d+)/, 0),
-        k: extract(line, /K(-?\d+\.\d+)/, 0),
-        f: extract(line, /F(\d+\.\d+)/, t.feed),
-      } as CircularMoveCommand;
-    else
-      return {
-        type,
-        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
-        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
-        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
-        i: extract(line, /I(-?\d+\.\d+)/, 0),
-        j: extract(line, /J(-?\d+\.\d+)/, 0),
-        k: extract(line, /K(-?\d+\.\d+)/, 0),
-        f: extract(line, /F(\d+\.\d+)/, t.feed),
-      } as CircularMoveCommand;
+    return getCircular(line, t, c, type);
   } else if (handledNonMoveCommands.includes(line.substring(0, 3))) {
     // this looks, and is, horrible but trust the process
     const cmd = line.substring(0, 3);
@@ -154,3 +100,53 @@ export const interpretCommand = (
   // will just be skipped
   return null;
 };
+
+const getLinear = (
+  line: string,
+  t: ToolState,
+  c: CoordState,
+  type: LinearMoveCommandType,
+): LinearMoveCommand =>
+  t.pos === 'abs'
+    ? ({
+        type,
+        x: extract(line, /X(-?\d+\.\d+)/, c.x),
+        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
+        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
+        f: extract(line, /F(\d+\.\d+)/, t.feed),
+      } as LinearMoveCommand)
+    : ({
+        type,
+        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
+        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
+        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
+        f: extract(line, /F(\d+\.\d+)/, t.feed),
+      } as LinearMoveCommand);
+
+const getCircular = (
+  line: string,
+  t: ToolState,
+  c: CoordState,
+  type: CircularMoveCommandType,
+): CircularMoveCommand =>
+  t.pos === 'abs'
+    ? ({
+        type,
+        x: extract(line, /X(-?\d+\.\d+)/, c.x),
+        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
+        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
+        i: extract(line, /I(-?\d+\.\d+)/, 0),
+        j: extract(line, /J(-?\d+\.\d+)/, 0),
+        k: extract(line, /K(-?\d+\.\d+)/, 0),
+        f: extract(line, /F(\d+\.\d+)/, t.feed),
+      } as CircularMoveCommand)
+    : ({
+        type,
+        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
+        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
+        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
+        i: extract(line, /I(-?\d+\.\d+)/, 0),
+        j: extract(line, /J(-?\d+\.\d+)/, 0),
+        k: extract(line, /K(-?\d+\.\d+)/, 0),
+        f: extract(line, /F(\d+\.\d+)/, t.feed),
+      } as CircularMoveCommand);
