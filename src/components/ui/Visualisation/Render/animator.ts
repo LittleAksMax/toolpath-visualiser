@@ -1,12 +1,23 @@
-import { Clock, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
+import {
+  BufferAttribute,
+  BufferGeometry,
+  Clock,
+  Line,
+  LineBasicMaterial,
+  PerspectiveCamera,
+  Scene,
+  Vector3,
+  WebGLRenderer,
+} from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useCursor, useGCodeFile } from '../../../../stores/code';
-import { useTool } from '../../../../stores/tool';
+import { RotationPlane, useTool } from '../../../../stores/tool';
 import {
   CircularMoveCommand,
+  delegator,
   interpretCommand,
   LinearMoveCommand,
-} from './animationUtil';
+} from './commandUtil';
 import { useCoords } from '../../../../stores/coords';
 import Tool from './Tool';
 
@@ -17,6 +28,33 @@ enum ToolState {
   MOVING,
   STOPPED,
 }
+
+const setCentre = (
+  centre: Vector3,
+  start: Vector3,
+  i: number,
+  j: number,
+  k: number,
+  rotPlane: RotationPlane,
+) => {
+  switch (rotPlane) {
+    case 'XY':
+      centre.setX(start.x + i);
+      centre.setY(start.y + j);
+      centre.setZ(start.z);
+      break;
+    case 'ZX':
+      centre.setX(start.x + i);
+      centre.setY(start.y);
+      centre.setZ(start.z + k);
+      break;
+    case 'YZ':
+      centre.setX(start.x);
+      centre.setY(start.y + j);
+      centre.setZ(start.z + k);
+      break;
+  }
+};
 
 const sToolState = (s: ToolState): 'STARTING' | 'MOVING' | 'STOPPED' =>
   s === ToolState.STARTING
@@ -40,6 +78,25 @@ export const createAnimator = (
   height: number,
   clock: Clock,
 ): Animator => {
+  // maximum number of points your trail will ever have:
+  const MAX_POINTS = 10000;
+
+  // 1️⃣ Create a BufferGeometry to hold all the trail points:
+  const trailGeo = new BufferGeometry();
+  const positions = new Float32Array(MAX_POINTS * 3); // x,y,z per point
+  trailGeo.setAttribute('position', new BufferAttribute(positions, 3));
+  trailGeo.setDrawRange(0, 0); // start with zero points
+
+  // 2️⃣ A simple flat white material:
+  const trailMat = new LineBasicMaterial({ color: 0x02ccfe });
+
+  // 3️⃣ The Line object itself:
+  const trailLine = new Line(trailGeo, trailMat);
+  scene.add(trailLine);
+
+  // keep track of how many points we’ve pushed so far:
+  let drawCount = 0;
+
   // variables for keeping track manoeuvre progress
   let start = new Vector3();
   let end = new Vector3();
@@ -69,6 +126,11 @@ export const createAnimator = (
       // reset separate coordinates store
       coords.setVec(toolMesh.position);
 
+      // reset number of points in trail
+      drawCount = 0;
+      trailGeo.setDrawRange(0, 0);
+      trailGeo.attributes.position.needsUpdate = true; // force re-upload of position buffer
+
       state = ToolState.STARTING;
     }
 
@@ -89,38 +151,12 @@ export const createAnimator = (
         if (!cmd) {
           // move onto next command since it is clearly not needed
           state = ToolState.STOPPED;
-        }
-        // set data about the drill
-        else if (cmd.type === 'G17') {
-          tool.setRotPlane('XY');
+        } else if (cmd.type in delegator) {
+          // set data about the drill for non-move commands
+          delegator[cmd.type](tool);
           state = ToolState.STOPPED;
-        } else if (cmd.type === 'G18') {
-          tool.setRotPlane('ZX');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G19') {
-          tool.setRotPlane('YZ');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G20') {
-          tool.setUnits('in');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G21') {
-          tool.setUnits('mm');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G90') {
-          tool.setPos('abs');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G91') {
-          tool.setPos('inc');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G93') {
-          tool.setFeedMode('reg');
-          state = ToolState.STOPPED;
-        } else if (cmd.type === 'G94') {
-          tool.setFeedMode('inv');
-          state = ToolState.STOPPED;
-        }
-        // movement commands
-        else {
+        } else {
+          // movement commands
           if (cmd.type === 'G0') {
             const { x, y, z } = cmd as LinearMoveCommand;
             start.copy(toolMesh.position);
@@ -145,24 +181,7 @@ export const createAnimator = (
             start.copy(toolMesh.position);
             end.set(x, y, z);
 
-            switch (tool.rotPlane) {
-              case 'XY':
-                centre.setX(start.x + i);
-                centre.setY(start.y + j);
-                centre.setZ(start.z);
-                break;
-              case 'ZX':
-                centre.setX(start.x + i);
-                centre.setY(start.y);
-                centre.setZ(start.z + k);
-                break;
-              case 'YZ':
-                centre.setX(start.x);
-                centre.setY(start.y + j);
-                centre.setZ(start.z + k);
-                break;
-            }
-            console.debug({ x, y, z, i, j, k, centre });
+            setCentre(centre, start, i, j, k, tool.rotPlane);
 
             movementType = 2;
           } else {
@@ -172,23 +191,7 @@ export const createAnimator = (
             start.copy(toolMesh.position);
             end.set(x, y, z);
 
-            switch (tool.rotPlane) {
-              case 'XY':
-                centre.setX(start.x + i);
-                centre.setY(start.y + j);
-                centre.setZ(start.z);
-                break;
-              case 'ZX':
-                centre.setX(start.x + i);
-                centre.setY(start.y);
-                centre.setZ(start.z + k);
-                break;
-              case 'YZ':
-                centre.setX(start.x);
-                centre.setY(start.y + j);
-                centre.setZ(start.z + k);
-                break;
-            }
+            setCentre(centre, start, i, j, k, tool.rotPlane);
 
             movementType = 3;
           }
@@ -240,6 +243,17 @@ export const createAnimator = (
 
     // update controls
     controls.update();
+
+    // — record current cone world-position —
+    if (drawCount < MAX_POINTS) {
+      // write into the next slot in our Float32Array
+      positions[drawCount * 3 + 0] = toolMesh.position.x;
+      positions[drawCount * 3 + 1] = toolMesh.position.y;
+      positions[drawCount * 3 + 2] = toolMesh.position.z;
+      drawCount++;
+      trailGeo.setDrawRange(0, drawCount);
+      trailGeo.attributes.position.needsUpdate = true;
+    }
 
     // render main scene
     renderer.setViewport(0, 0, width, height);

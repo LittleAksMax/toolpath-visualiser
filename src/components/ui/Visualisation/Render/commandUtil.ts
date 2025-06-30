@@ -150,3 +150,19 @@ const getCircular = (
         k: extract(line, /K(-?\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as CircularMoveCommand);
+
+type DelegatorType = {
+  [cmd: string]: (t: ToolState) => void;
+};
+
+export const delegator: DelegatorType = {
+  G17: (t) => t.setRotPlane('XY'),
+  G18: (t) => t.setRotPlane('ZX'),
+  G19: (t) => t.setRotPlane('YZ'),
+  G20: (t) => t.setUnits('in'),
+  G21: (t) => t.setUnits('mm'),
+  G90: (t) => t.setPos('abs'),
+  G91: (t) => t.setPos('inc'),
+  G93: (t) => t.setFeedMode('reg'),
+  G94: (t) => t.setFeedMode('inv'),
+};

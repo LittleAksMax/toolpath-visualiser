@@ -11,8 +11,12 @@ import {
   Object3D,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass';
+import { CopyShader } from 'three/examples/jsm/shaders/CopyShader';
 import { createAnimator } from './animator';
 import Tool from './Tool';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass';
 
 export const setupCamera = (
   camera: PerspectiveCamera, // NOTE: haven't implemented ortho camera
@@ -71,9 +75,43 @@ export const setupClock = (): Clock => {
   return new Clock();
 };
 
+/**
+ * This function is largely ChatGPT'd
+ */
+export const setupTrail = (
+  scene: Scene,
+  camera: PerspectiveCamera,
+  renderer: WebGLRenderer,
+  _: Tool,
+): EffectComposer => {
+  const composer = new EffectComposer(renderer);
+
+  // draw the full scene every frame, but only clear the depth buffer
+  const scenePass = new RenderPass(scene, camera);
+  scenePass.clear = false; // do NOT clear color
+  scenePass.clearDepth = true; // DO clear depth, so each frame’s depth test is fresh
+  composer.addPass(scenePass);
+
+  const trailCam = camera.clone();
+  trailCam.layers.set(1); // only sees layer 1
+  const trailMat = new MeshBasicMaterial({ color: 0xffffff });
+  const conePass = new RenderPass(scene, trailCam);
+  conePass.clear = false;
+  conePass.clearDepth = true;
+  conePass.overrideMaterial = trailMat;
+  composer.addPass(conePass);
+
+  const copyPass = new ShaderPass(CopyShader);
+  copyPass.renderToScreen = true;
+  composer.addPass(copyPass);
+
+  return composer;
+};
+
 export const setupScene = (
   scene: Scene,
   renderer: WebGLRenderer,
+  // composer: EffectComposer,
   camera: PerspectiveCamera,
   controls: OrbitControls,
   cubeScene: Scene,

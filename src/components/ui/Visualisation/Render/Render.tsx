@@ -72,6 +72,9 @@ const Render: FC = () => {
       const clock = setupClock();
       clockRef.current = clock;
 
+      // setup composer for trails
+      // const composer = setupTrail(scene, camera, renderer, tool);
+
       // NOTE: this is a hacky solution, but it works
       if (axes) {
         const helper = new AxesHelper(10);
@@ -88,6 +91,7 @@ const Render: FC = () => {
       setupScene(
         scene,
         renderer,
+        // composer,
         camera,
         controls,
         cubeScene,
