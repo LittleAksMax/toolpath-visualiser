@@ -1,0 +1,8 @@
+.simcontrol {
+  display: inline-block;
+}
+
+.simcontrol * {
+  padding: 5px;
+  margin: 5px;
+}

@@ -1,0 +1,15 @@
+.loc {
+}
+
+.lineno {
+  min-width: 4rem;
+  text-align: right;
+}
+
+.highlighted-act {
+  color: orange;
+}
+
+.highlighted-unact {
+  color: #ff2230;
+}

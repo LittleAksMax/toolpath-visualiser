@@ -1,0 +1,23 @@
+.code-container {
+  font-size: 12pt;
+  display: flex;
+  flex-flow: column nowrap;
+  cursor: pointer;
+}
+
+.preview {
+  overflow-y: auto;
+  overflow-x: auto;
+  position: absolute;
+  background-color: lightblue;
+  border-radius: 10px;
+  padding: 2px;
+  height: 100vh;
+  width: calc(30% - 4px);
+  right: 0;
+  top: 0;
+}
+
+.preview-heading {
+  font-style: bold;
+}
