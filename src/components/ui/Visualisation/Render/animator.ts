@@ -27,9 +27,25 @@ enum ToolState {
   STOPPED,
 }
 
-const setCentre = (
-  centre: Vector3,
+const setupLinearMoveAndReturnDistance = (
+  { x, y, z }: LinearMoveCommand,
+  toolMesh: Tool,
   start: Vector3,
+  end: Vector3,
+): number => {
+  start.copy(toolMesh.position);
+
+  end.set(x, y, z);
+
+  // get distance of linear movement and return
+  return start.distanceTo(end);
+};
+
+const setCentreAndRotationAxisAndOffset = (
+  centre: Vector3,
+  rotAxis: Vector3,
+  start: Vector3,
+  startOffset: Vector3,
   i: number,
   j: number,
   k: number,
@@ -40,29 +56,75 @@ const setCentre = (
       centre.setX(start.x + i);
       centre.setY(start.y + j);
       centre.setZ(start.z);
+      startOffset.set(-i, -j, 0);
+      rotAxis.set(0, 0, 1); // Z-axis
       break;
     case 'ZX':
       centre.setX(start.x + i);
       centre.setY(start.y);
       centre.setZ(start.z + k);
+      startOffset.set(-i, 0, -k);
+      rotAxis.set(0, 1, 0); // Y-axis
       break;
     case 'YZ':
       centre.setX(start.x);
       centre.setY(start.y + j);
       centre.setZ(start.z + k);
+      startOffset.set(0, -j, -k);
+      rotAxis.set(1, 0, 0); // Z-axis
       break;
   }
 };
 
-const sToolState = (s: ToolState): 'STARTING' | 'MOVING' | 'STOPPED' =>
-  s === ToolState.STARTING
-    ? 'STARTING'
-    : s === ToolState.MOVING
-    ? 'MOVING'
-    : 'STOPPED';
+const setupCircularMoveAndReturnAngle = (
+  { x, y, z, i, j, k }: CircularMoveCommand,
+  toolMesh: Tool,
+  start: Vector3,
+  end: Vector3,
+  centre: Vector3,
+  startOffset: Vector3,
+  rotAxis: Vector3,
+  rotPlane: RotationPlane,
+  cw: boolean, // true - clockwise, false - counter clockwise
+): number => {
+  start.copy(toolMesh.position);
+  end.set(x, y, z);
 
-const log = (s: ToolState, msg: any) =>
-  console.debug('<' + sToolState(s) + '> ' + msg);
+  setCentreAndRotationAxisAndOffset(
+    centre,
+    rotAxis,
+    start,
+    startOffset,
+    i,
+    j,
+    k,
+    rotPlane,
+  );
+
+  // get cross product of vectors between start and end to see if
+  // it's +ve or -ve to check if we need to correct for the rotation direction
+  console.debug(start);
+  const endProj = end.clone().sub(centre);
+  const deltaAngle = startOffset.angleTo(endProj);
+  const cross = endProj.cross(startOffset);
+
+  // +1 if start -> end is CCW about +ve rotation axis
+  const sign = Math.sign(cross.dot(rotAxis)) * (cw ? -1 : 1);
+
+  const signCorrectedAngle = deltaAngle * sign;
+
+  return signCorrectedAngle;
+};
+
+// const sToolState = (s: ToolState): 'STARTING' | 'MOVING' | 'STOPPED' =>
+//   s === ToolState.STARTING
+//     ? 'STARTING'
+//     : s === ToolState.MOVING
+//     ? 'MOVING'
+//     : 'STOPPED';
+
+// const log = (s: ToolState, msg: any) =>
+//   console.debug('<' + sToolState(s) + '> ' + msg);
 
 export const createAnimator = (
   scene: Scene,
@@ -90,8 +152,10 @@ export const createAnimator = (
   let state = ToolState.STARTING;
 
   // fields specific for circular interpolation
-  // let radius: number; // for radius of arc
+  let startOffset: Vector3 = new Vector3(); // for angle calculations
+
   let centre: Vector3 = new Vector3(); // for centre of circle of arc
+  let rotAxis: Vector3 = new Vector3(); // for centre of circle of arc
 
   const animate = () => {
     // state for execution
@@ -126,11 +190,9 @@ export const createAnimator = (
       // if not moving, then we want to execute the next command
       // and start moving
       if (state === ToolState.STARTING) {
-        log(state, cursor.line);
+        // log(state, cursor.line);
         const line = code.lines[cursor.line];
         const cmd = interpretCommand(line, tool, coords);
-
-        console.debug(cmd);
 
         if (!cmd) {
           // move onto next command since it is clearly not needed
@@ -142,40 +204,49 @@ export const createAnimator = (
         } else {
           // movement commands
           if (cmd.type === 'G0') {
-            const { x, y, z } = cmd as LinearMoveCommand;
-            start.copy(toolMesh.position);
-            end.set(x, y, z);
-
-            // get distance of linear movement
-            distance = start.distanceTo(end);
-
+            distance = setupLinearMoveAndReturnDistance(
+              cmd as LinearMoveCommand,
+              toolMesh,
+              start,
+              end,
+            );
             movementType = 0;
           } else if (cmd.type === 'G1') {
-            const { x, y, z } = cmd as LinearMoveCommand;
-            start.copy(toolMesh.position);
-
-            end.set(x, y, z);
-            // get distance of linear movement
-            distance = start.distanceTo(end);
-
+            distance = setupLinearMoveAndReturnDistance(
+              cmd as LinearMoveCommand,
+              toolMesh,
+              start,
+              end,
+            );
             movementType = 1;
           } else if (cmd.type === 'G2') {
-            const { x, y, z, i, j, k } = cmd as CircularMoveCommand;
-
-            start.copy(toolMesh.position);
-            end.set(x, y, z);
-
-            setCentre(centre, start, i, j, k, tool.rotPlane);
+            // we will reuse the distance variable for the angle
+            distance = setupCircularMoveAndReturnAngle(
+              cmd as CircularMoveCommand,
+              toolMesh,
+              start,
+              end,
+              centre,
+              startOffset,
+              rotAxis,
+              tool.rotPlane,
+              true,
+            );
 
             movementType = 2;
           } else {
             // G3
-            const { x, y, z, i, j, k } = cmd as CircularMoveCommand;
-
-            start.copy(toolMesh.position);
-            end.set(x, y, z);
-
-            setCentre(centre, start, i, j, k, tool.rotPlane);
+            distance = setupCircularMoveAndReturnAngle(
+              cmd as CircularMoveCommand,
+              toolMesh,
+              start,
+              end,
+              centre,
+              startOffset,
+              rotAxis,
+              tool.rotPlane,
+              false,
+            );
 
             movementType = 3;
           }
@@ -188,7 +259,7 @@ export const createAnimator = (
       }
 
       if (state === ToolState.MOVING) {
-        log(state, cursor.line);
+        // log(state, cursor.line);
 
         // normalise progress by distance so all moves take 0.5s keep
         // in mind we are completely ignoring feed rate (for simplicity)
@@ -200,10 +271,11 @@ export const createAnimator = (
           toolMesh.position.lerpVectors(start, end, t);
           coords.setVec(toolMesh.position);
         } else {
-          // we should invert the direction for G2 and G3
-          // as G2 is clockwise, and G3 is counter-clockwise
-          // const directionMultiplier = movementType === 2 ? 1 : -1;
-          // TODO: handle circular movements
+          const offset = startOffset
+            .clone()
+            .applyAxisAngle(rotAxis, distance * t);
+          toolMesh.position.copy(offset.add(centre));
+          coords.setVec(toolMesh.position);
         }
 
         // since all movements take roughly 1 second, we wait until about 1 second
@@ -214,11 +286,8 @@ export const createAnimator = (
       }
 
       if (state === ToolState.STOPPED) {
-        log(state, cursor.line);
+        // log(state, cursor.line);
         cursor.nextLine();
-
-        console.debug(cursor.line);
-
         state = ToolState.STARTING;
       }
     }
@@ -228,7 +297,7 @@ export const createAnimator = (
     // update controls
     controls.update();
 
-    // — record current cone world-position —
+    // draw trail
     if (drawCount < MAX_TRAIL_POINTS) {
       // write into the next slot in our Float32Array
       trailPositions[drawCount * 3 + 0] = toolMesh.position.x;
