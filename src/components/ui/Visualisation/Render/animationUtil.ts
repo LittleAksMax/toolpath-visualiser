@@ -71,6 +71,8 @@ export const interpretCommand = (
 
   const extract = (line: string, r: RegExp, fallback: number) => {
     const matches = line.match(r);
+    // matches[1] since the whole string matching is matches[0]
+    // and then matches[1] is the capture group for the number itself
     return matches ? parseFloat(matches[1]) : fallback;
   };
 
@@ -79,16 +81,16 @@ export const interpretCommand = (
     if (t.pos === 'abs') {
       return {
         type: 'G0',
-        x: extract(line, /X(\d+\.\d+)/, c.x),
-        y: extract(line, /Y(\d+\.\d+)/, c.y),
-        z: extract(line, /Z(\d+\.\d+)/, c.z),
+        x: extract(line, /X(-?\d+\.\d+)/, c.x),
+        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
+        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
       } as LinearMoveCommand;
     } else {
       return {
         type: 'G0',
-        x: c.x + extract(line, /X(\d+\.\d+)/, 0),
-        y: c.y + extract(line, /Y(\d+\.\d+)/, 0),
-        z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
+        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
+        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
+        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
       } as LinearMoveCommand;
     }
   } else if (line.startsWith('G1')) {
@@ -97,17 +99,17 @@ export const interpretCommand = (
     if (t.pos === 'abs') {
       return {
         type: 'G1',
-        x: extract(line, /X(\d+\.\d+)/, c.x),
-        y: extract(line, /Y(\d+\.\d+)/, c.y),
-        z: extract(line, /Z(\d+\.\d+)/, c.z),
+        x: extract(line, /X(-?\d+\.\d+)/, c.x),
+        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
+        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as LinearMoveCommand;
     } else {
       return {
         type: 'G1',
-        x: c.x + extract(line, /X(\d+\.\d+)/, 0),
-        y: c.y + extract(line, /Y(\d+\.\d+)/, 0),
-        z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
+        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
+        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
+        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as LinearMoveCommand;
     }
@@ -117,23 +119,23 @@ export const interpretCommand = (
     if (t.pos === 'abs')
       return {
         type,
-        x: extract(line, /X(\d+\.\d+)/, c.x),
-        y: extract(line, /Y(\d+\.\d+)/, c.y),
-        z: extract(line, /Z(\d+\.\d+)/, c.z),
-        i: extract(line, /I(\d+\.\d+)/, 0),
-        j: extract(line, /J(\d+\.\d+)/, 0),
-        k: extract(line, /K(\d+\.\d+)/, 0),
+        x: extract(line, /X(-?\d+\.\d+)/, c.x),
+        y: extract(line, /Y(-?\d+\.\d+)/, c.y),
+        z: extract(line, /Z(-?\d+\.\d+)/, c.z),
+        i: extract(line, /I(-?\d+\.\d+)/, 0),
+        j: extract(line, /J(-?\d+\.\d+)/, 0),
+        k: extract(line, /K(-?\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as CircularMoveCommand;
     else
       return {
         type,
-        x: c.x + extract(line, /X(\d+\.\d+)/, 0),
-        y: c.y + extract(line, /Y(\d+\.\d+)/, 0),
-        z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
-        i: extract(line, /I(\d+\.\d+)/, 0),
-        j: extract(line, /J(\d+\.\d+)/, 0),
-        k: extract(line, /K(\d+\.\d+)/, 0),
+        x: c.x + extract(line, /X(-?\d+\.\d+)/, 0),
+        y: c.y + extract(line, /Y(-?\d+\.\d+)/, 0),
+        z: c.z + extract(line, /Z(-?\d+\.\d+)/, 0),
+        i: extract(line, /I(-?\d+\.\d+)/, 0),
+        j: extract(line, /J(-?\d+\.\d+)/, 0),
+        k: extract(line, /K(-?\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as CircularMoveCommand;
   } else if (handledNonMoveCommands.includes(line.substring(0, 3))) {

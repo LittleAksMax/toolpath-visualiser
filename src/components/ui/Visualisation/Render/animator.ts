@@ -162,6 +162,7 @@ export const createAnimator = (
                 centre.setZ(start.z + k);
                 break;
             }
+            console.debug({ x, y, z, i, j, k, centre });
 
             movementType = 2;
           } else {
