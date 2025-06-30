@@ -1,5 +1,5 @@
 import { CoordState } from '../../../../stores/coords';
-import { Positioning, RotationPlane } from '../../../../stores/tool';
+import { ToolState } from '../../../../stores/tool';
 
 type LinearMoveCommandType = 'G0' | 'G1';
 type CircularMoveCommandType = 'G2' | 'G3';
@@ -51,7 +51,7 @@ const handledNonMoveCommands = [
 
 export const interpretCommand = (
   line: string,
-  t: { positioning: Positioning; rotPlane: RotationPlane; feed: number },
+  t: ToolState,
   c: CoordState,
 ): Command | null => {
   // all these moves are unactionable
@@ -76,7 +76,7 @@ export const interpretCommand = (
 
   if (line.startsWith('G0')) {
     // rapid move
-    if (t.positioning === 'abs') {
+    if (t.pos === 'abs') {
       return {
         type: 'G0',
         x: extract(line, /X(\d+\.\d+)/, c.x),
@@ -94,8 +94,7 @@ export const interpretCommand = (
   } else if (line.startsWith('G1')) {
     // linear interpolation
     // X, Y, Z, F
-    console.debug(t.positioning);
-    if (t.positioning === 'abs') {
+    if (t.pos === 'abs') {
       return {
         type: 'G1',
         x: extract(line, /X(\d+\.\d+)/, c.x),
@@ -115,7 +114,7 @@ export const interpretCommand = (
   } else if (line.startsWith('G2') || line.startsWith('G3')) {
     const type = line.substring(0, 2) as CircularMoveCommandType;
 
-    if (t.positioning === 'abs')
+    if (t.pos === 'abs')
       return {
         type,
         x: extract(line, /X(\d+\.\d+)/, c.x),

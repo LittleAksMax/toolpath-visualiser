@@ -1,7 +1,7 @@
 import { Clock, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useCursor, useGCodeFile } from '../../../../stores/code';
-import { Positioning, RotationPlane, useTool } from '../../../../stores/tool';
+import { useTool } from '../../../../stores/tool';
 import {
   CircularMoveCommand,
   interpretCommand,
@@ -40,10 +40,6 @@ export const createAnimator = (
   height: number,
   clock: Clock,
 ): Animator => {
-  // variables to track tool state
-  let rotPlane: RotationPlane = 'XY';
-  let positioning: Positioning = 'abs';
-
   // variables for keeping track manoeuvre progress
   let start = new Vector3();
   let end = new Vector3();
@@ -86,11 +82,7 @@ export const createAnimator = (
       if (state === ToolState.STARTING) {
         log(state, cursor.line);
         const line = code.lines[cursor.line];
-        const cmd = interpretCommand(
-          line,
-          { positioning, rotPlane, feed: tool.feed },
-          coords,
-        );
+        const cmd = interpretCommand(line, tool, coords);
 
         console.debug(cmd);
 
@@ -100,16 +92,13 @@ export const createAnimator = (
         }
         // set data about the drill
         else if (cmd.type === 'G17') {
-          rotPlane = 'XY';
-          // tool.setRotPlane('XY');
+          tool.setRotPlane('XY');
           state = ToolState.STOPPED;
         } else if (cmd.type === 'G18') {
-          rotPlane = 'ZX';
-          // tool.setRotPlane('ZX');
+          tool.setRotPlane('ZX');
           state = ToolState.STOPPED;
         } else if (cmd.type === 'G19') {
-          rotPlane = 'YZ';
-          // tool.setRotPlane('YZ');
+          tool.setRotPlane('YZ');
           state = ToolState.STOPPED;
         } else if (cmd.type === 'G20') {
           tool.setUnits('in');
@@ -118,12 +107,10 @@ export const createAnimator = (
           tool.setUnits('mm');
           state = ToolState.STOPPED;
         } else if (cmd.type === 'G90') {
-          positioning = 'abs';
-          // tool.setPos('abs');
+          tool.setPos('abs');
           state = ToolState.STOPPED;
         } else if (cmd.type === 'G91') {
-          positioning = 'inc';
-          // tool.setPos('inc');
+          tool.setPos('inc');
           state = ToolState.STOPPED;
         } else if (cmd.type === 'G93') {
           tool.setFeedMode('reg');
