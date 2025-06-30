@@ -16,6 +16,7 @@ import {
   setupControls,
   setupScene,
   setupTool,
+  setupTrail,
   setupViewCube,
 } from './renderUtil';
 import { useViewStore } from '../../../../stores/view';
@@ -72,8 +73,8 @@ const Render: FC = () => {
       const clock = setupClock();
       clockRef.current = clock;
 
-      // setup composer for trails
-      // const composer = setupTrail(scene, camera, renderer, tool);
+      // setup trails point buffer
+      const { trailGeo, positions } = setupTrail(scene);
 
       // NOTE: this is a hacky solution, but it works
       if (axes) {
@@ -91,12 +92,13 @@ const Render: FC = () => {
       setupScene(
         scene,
         renderer,
-        // composer,
         camera,
         controls,
         cubeScene,
         cubeCamera,
         tool,
+        trailGeo,
+        positions,
         width,
         height,
         clock,

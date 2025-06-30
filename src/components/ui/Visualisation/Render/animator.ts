@@ -1,9 +1,6 @@
 import {
-  BufferAttribute,
   BufferGeometry,
   Clock,
-  Line,
-  LineBasicMaterial,
   PerspectiveCamera,
   Scene,
   Vector3,
@@ -20,6 +17,7 @@ import {
 } from './commandUtil';
 import { useCoords } from '../../../../stores/coords';
 import Tool from './Tool';
+import { MAX_TRAIL_POINTS } from './renderUtil';
 
 export type Animator = () => void;
 
@@ -74,27 +72,13 @@ export const createAnimator = (
   cubeScene: Scene,
   cubeCamera: PerspectiveCamera,
   toolMesh: Tool,
+  trailBuf: BufferGeometry,
+  trailPositions: Float32Array,
   width: number,
   height: number,
   clock: Clock,
 ): Animator => {
-  // maximum number of points your trail will ever have:
-  const MAX_POINTS = 10000;
-
-  // 1️⃣ Create a BufferGeometry to hold all the trail points:
-  const trailGeo = new BufferGeometry();
-  const positions = new Float32Array(MAX_POINTS * 3); // x,y,z per point
-  trailGeo.setAttribute('position', new BufferAttribute(positions, 3));
-  trailGeo.setDrawRange(0, 0); // start with zero points
-
-  // 2️⃣ A simple flat white material:
-  const trailMat = new LineBasicMaterial({ color: 0x02ccfe });
-
-  // 3️⃣ The Line object itself:
-  const trailLine = new Line(trailGeo, trailMat);
-  scene.add(trailLine);
-
-  // keep track of how many points we’ve pushed so far:
+  // keep track of how many trail points are around
   let drawCount = 0;
 
   // variables for keeping track manoeuvre progress
@@ -128,8 +112,8 @@ export const createAnimator = (
 
       // reset number of points in trail
       drawCount = 0;
-      trailGeo.setDrawRange(0, 0);
-      trailGeo.attributes.position.needsUpdate = true; // force re-upload of position buffer
+      trailBuf.setDrawRange(0, 0);
+      trailBuf.attributes.position.needsUpdate = true; // force re-upload of position buffer
 
       state = ToolState.STARTING;
     }
@@ -245,14 +229,14 @@ export const createAnimator = (
     controls.update();
 
     // — record current cone world-position —
-    if (drawCount < MAX_POINTS) {
+    if (drawCount < MAX_TRAIL_POINTS) {
       // write into the next slot in our Float32Array
-      positions[drawCount * 3 + 0] = toolMesh.position.x;
-      positions[drawCount * 3 + 1] = toolMesh.position.y;
-      positions[drawCount * 3 + 2] = toolMesh.position.z;
+      trailPositions[drawCount * 3 + 0] = toolMesh.position.x;
+      trailPositions[drawCount * 3 + 1] = toolMesh.position.y;
+      trailPositions[drawCount * 3 + 2] = toolMesh.position.z;
       drawCount++;
-      trailGeo.setDrawRange(0, drawCount);
-      trailGeo.attributes.position.needsUpdate = true;
+      trailBuf.setDrawRange(0, drawCount);
+      trailBuf.attributes.position.needsUpdate = true;
     }
 
     // render main scene
