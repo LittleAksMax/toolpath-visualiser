@@ -1,5 +1,5 @@
 import { CoordState } from '../../../../stores/coords';
-import { ToolState } from '../../../../stores/tool';
+import { Positioning, RotationPlane } from '../../../../stores/tool';
 
 type LinearMoveCommandType = 'G0' | 'G1';
 type CircularMoveCommandType = 'G2' | 'G3';
@@ -51,11 +51,11 @@ const handledNonMoveCommands = [
 
 export const interpretCommand = (
   line: string,
-  t: ToolState,
+  t: { positioning: Positioning; rotPlane: RotationPlane; feed: number },
   c: CoordState,
 ): Command | null => {
   // all these moves are unactionable
-  if (line.charAt(0) !== 'G') {
+  if (line.charAt(0) !== 'G' || line.length <= 2) {
     return null;
   }
 
@@ -76,24 +76,26 @@ export const interpretCommand = (
 
   if (line.startsWith('G0')) {
     // rapid move
-    if (t.pos === 'abs')
+    if (t.positioning === 'abs') {
       return {
         type: 'G0',
         x: extract(line, /X(\d+\.\d+)/, c.x),
         y: extract(line, /Y(\d+\.\d+)/, c.y),
         z: extract(line, /Z(\d+\.\d+)/, c.z),
       } as LinearMoveCommand;
-    else
+    } else {
       return {
         type: 'G0',
         x: c.x + extract(line, /X(\d+\.\d+)/, 0),
         y: c.y + extract(line, /Y(\d+\.\d+)/, 0),
         z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
       } as LinearMoveCommand;
+    }
   } else if (line.startsWith('G1')) {
     // linear interpolation
     // X, Y, Z, F
-    if (t.pos === 'abs')
+    console.debug(t.positioning);
+    if (t.positioning === 'abs') {
       return {
         type: 'G1',
         x: extract(line, /X(\d+\.\d+)/, c.x),
@@ -101,7 +103,7 @@ export const interpretCommand = (
         z: extract(line, /Z(\d+\.\d+)/, c.z),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as LinearMoveCommand;
-    else
+    } else {
       return {
         type: 'G1',
         x: c.x + extract(line, /X(\d+\.\d+)/, 0),
@@ -109,10 +111,11 @@ export const interpretCommand = (
         z: c.z + extract(line, /Z(\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as LinearMoveCommand;
+    }
   } else if (line.startsWith('G2') || line.startsWith('G3')) {
     const type = line.substring(0, 2) as CircularMoveCommandType;
 
-    if (t.pos === 'abs')
+    if (t.positioning === 'abs')
       return {
         type,
         x: extract(line, /X(\d+\.\d+)/, c.x),
@@ -134,7 +137,7 @@ export const interpretCommand = (
         k: extract(line, /K(\d+\.\d+)/, 0),
         f: extract(line, /F(\d+\.\d+)/, t.feed),
       } as CircularMoveCommand;
-  } else if (line.substring(0, 3) in handledNonMoveCommands) {
+  } else if (handledNonMoveCommands.includes(line.substring(0, 3))) {
     // this looks, and is, horrible but trust the process
     const cmd = line.substring(0, 3);
     return {

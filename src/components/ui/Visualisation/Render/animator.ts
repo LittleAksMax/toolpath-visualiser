@@ -1,7 +1,7 @@
 import { Clock, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { useCursor, useGCodeFile } from '../../../../stores/code';
-import { useTool } from '../../../../stores/tool';
+import { Positioning, RotationPlane, useTool } from '../../../../stores/tool';
 import {
   CircularMoveCommand,
   interpretCommand,
@@ -11,6 +11,22 @@ import { useCoords } from '../../../../stores/coords';
 import Tool from './Tool';
 
 export type Animator = () => void;
+
+enum ToolState {
+  STARTING,
+  MOVING,
+  STOPPED,
+}
+
+const sToolState = (s: ToolState): 'STARTING' | 'MOVING' | 'STOPPED' =>
+  s === ToolState.STARTING
+    ? 'STARTING'
+    : s === ToolState.MOVING
+    ? 'MOVING'
+    : 'STOPPED';
+
+const log = (s: ToolState, msg: any) =>
+  console.debug('<' + sToolState(s) + '> ' + msg);
 
 export const createAnimator = (
   scene: Scene,
@@ -24,13 +40,17 @@ export const createAnimator = (
   height: number,
   clock: Clock,
 ): Animator => {
-  // local variables for keeping track
+  // variables to track tool state
+  let rotPlane: RotationPlane = 'XY';
+  let positioning: Positioning = 'abs';
+
+  // variables for keeping track manoeuvre progress
   let start = new Vector3();
   let end = new Vector3();
   let distance = 0; // distance travelled in maneouvre to gauge time taken
   let tProgress = 0; // progress of current manoeuvre
   let movementType: number; // track type of movement (G0,G1,G2,G3) so we know how to move
-  let currentlyMoving: boolean = false;
+  let state = ToolState.STARTING;
 
   // fields specific for circular interpolation
   // let radius: number; // for radius of arc
@@ -45,54 +65,75 @@ export const createAnimator = (
 
     // since we are interpolating moves
     const delta = clock.getDelta();
-    const lineNo = cursor.line;
-    const maxLine = cursor.maxLine;
 
     // start and not playing => we should be at 0,0,0
-    if (lineNo === 0 && !cursor.sim) {
+    if (cursor.line === 0 && !cursor.sim) {
       toolMesh.resetPosition();
 
       // reset separate coordinates store
       coords.setVec(toolMesh.position);
 
-      currentlyMoving = false;
+      state = ToolState.STARTING;
     }
 
     // maxLine !== 0 ensures that there is a valid program loaded
     // and we don't waste time
     // however, since we advance the line before finishing the move,
     // we just check if we are currently moving as well
-    if (cursor.sim && maxLine !== 0 && lineNo < maxLine) {
+    if (cursor.sim && cursor.maxLine !== 0 && cursor.line < cursor.maxLine) {
       // if not moving, then we want to execute the next command
       // and start moving
-      console.debug(
-        currentlyMoving + ' [' + lineNo + '] ' + code.lines[lineNo],
-      );
-      if (!currentlyMoving) {
-        const line = code.lines[lineNo];
-        const cmd = interpretCommand(line, tool, coords);
+      if (state === ToolState.STARTING) {
+        log(state, cursor.line);
+        const line = code.lines[cursor.line];
+        const cmd = interpretCommand(
+          line,
+          { positioning, rotPlane, feed: tool.feed },
+          coords,
+        );
+
+        console.debug(cmd);
 
         if (!cmd) {
           // move onto next command since it is clearly not needed
-          cursor.nextLine();
+          state = ToolState.STOPPED;
         }
         // set data about the drill
-        else if (cmd.type === 'G17') tool.setRotPlane('XY');
-        else if (cmd.type === 'G18') tool.setRotPlane('ZX');
-        else if (cmd.type === 'G19') tool.setRotPlane('YZ');
-        else if (cmd.type === 'G20') tool.setUnits('in');
-        else if (cmd.type === 'G21') tool.setUnits('mm');
-        else if (cmd.type === 'G90') tool.setPos('abs');
-        else if (cmd.type === 'G91') tool.setPos('inc');
-        else if (cmd.type === 'G93') tool.setFeedMode('reg');
-        else if (cmd.type === 'G94') tool.setFeedMode('inv');
+        else if (cmd.type === 'G17') {
+          rotPlane = 'XY';
+          // tool.setRotPlane('XY');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G18') {
+          rotPlane = 'ZX';
+          // tool.setRotPlane('ZX');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G19') {
+          rotPlane = 'YZ';
+          // tool.setRotPlane('YZ');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G20') {
+          tool.setUnits('in');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G21') {
+          tool.setUnits('mm');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G90') {
+          positioning = 'abs';
+          // tool.setPos('abs');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G91') {
+          positioning = 'inc';
+          // tool.setPos('inc');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G93') {
+          tool.setFeedMode('reg');
+          state = ToolState.STOPPED;
+        } else if (cmd.type === 'G94') {
+          tool.setFeedMode('inv');
+          state = ToolState.STOPPED;
+        }
         // movement commands
         else {
-          // we will start moving after reading a movement instruction
-          // in any case
-          currentlyMoving = true;
-          tProgress = 0;
-
           if (cmd.type === 'G0') {
             const { x, y, z } = cmd as LinearMoveCommand;
             start.copy(toolMesh.position);
@@ -163,13 +204,20 @@ export const createAnimator = (
 
             movementType = 3;
           }
+
+          // we will start moving after reading a movement instruction
+          // in any case
+          state = ToolState.MOVING;
+          tProgress = 0;
         }
       }
 
-      if (currentlyMoving) {
+      if (state === ToolState.MOVING) {
+        log(state, cursor.line);
+
         // normalise progress by distance so all moves take 0.5s keep
         // in mind we are completely ignoring feed rate (for simplicity)
-        tProgress += distance > 0 ? (4 * delta) / distance : 1;
+        tProgress += distance > 0 ? (2 * delta) / distance : 1;
         const t = Math.min(tProgress, 1);
 
         if (movementType === 0 || movementType === 1) {
@@ -186,9 +234,17 @@ export const createAnimator = (
         // since all movements take roughly 1 second, we wait until about 1 second
         // has passed and then assume the manoeuvre is over
         if (t >= 1) {
-          currentlyMoving = false;
-          cursor.nextLine();
+          state = ToolState.STOPPED;
         }
+      }
+
+      if (state === ToolState.STOPPED) {
+        log(state, cursor.line);
+        cursor.nextLine();
+
+        console.debug(cursor.line);
+
+        state = ToolState.STARTING;
       }
     }
 
