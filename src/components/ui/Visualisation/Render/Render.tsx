@@ -1,6 +1,7 @@
 import { FC, useCallback, useEffect, useRef } from 'react';
 import {
   AxesHelper,
+  BufferGeometry,
   Clock,
   GridHelper,
   PerspectiveCamera,
@@ -32,6 +33,8 @@ const Render: FC = () => {
   const cameraRef = useRef<PerspectiveCamera>(null!);
   const toolRef = useRef<Tool>(null!);
   const clockRef = useRef<Clock>(null!);
+  const trailBufRef = useRef<BufferGeometry>(null!);
+
   const axesRef = useRef<AxesHelper | null>(null);
   const gridRef = useRef<GridHelper | null>(null);
 
@@ -75,6 +78,7 @@ const Render: FC = () => {
 
       // setup trails point buffer
       const { trailGeo, positions } = setupTrail(scene);
+      trailBufRef.current = trailGeo;
 
       // NOTE: this is a hacky solution, but it works
       if (axes) {
@@ -107,6 +111,7 @@ const Render: FC = () => {
       // cleanup on unmount
       const controls = controlsRef.current;
       const renderer = rendererRef.current;
+      const trailBuf = trailBufRef.current;
 
       if (controls) controls.dispose();
       if (renderer) {
@@ -114,6 +119,7 @@ const Render: FC = () => {
         canvas.parentNode?.removeChild(canvas);
         renderer.dispose();
       }
+      if (trailBuf) trailBuf.dispose();
 
       // clear refs
       sceneRef.current = undefined!;
