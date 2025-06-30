@@ -22,6 +22,8 @@ import {
 } from './renderUtil';
 import { useViewStore } from '../../../../stores/view';
 import Tool from './Tool';
+import CustomAxisHelper from './CustomAxisHelper';
+import CustomGridHelper from './CustomGridHelper';
 
 const Render: FC = () => {
   const { axes, grid } = useViewStore();
@@ -82,7 +84,7 @@ const Render: FC = () => {
 
       // NOTE: this is a hacky solution, but it works
       if (axes) {
-        const helper = new AxesHelper(10);
+        const helper = new CustomAxisHelper();
         scene.add(helper);
         axesRef.current = helper;
       } else if (!axes) {
@@ -138,7 +140,7 @@ const Render: FC = () => {
     if (!scene) return;
 
     if (axes && !axesRef.current) {
-      const helper = new AxesHelper(5);
+      const helper = new CustomAxisHelper();
       scene.add(helper);
       axesRef.current = helper;
     } else if (!axes && axesRef.current) {
@@ -155,10 +157,7 @@ const Render: FC = () => {
     if (!scene) return;
 
     if (grid && !gridRef.current) {
-      const helper = new GridHelper(20, 16);
-      helper.material.transparent = true;
-      helper.material.opacity = 0.25;
-      helper.rotateX(Math.PI / 2);
+      const helper = new CustomGridHelper();
       scene.add(helper);
       gridRef.current = helper;
     } else if (!grid && gridRef.current) {

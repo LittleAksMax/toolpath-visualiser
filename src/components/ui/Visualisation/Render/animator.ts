@@ -11,7 +11,7 @@ import { useCursor, useGCodeFile } from '../../../../stores/code';
 import { RotationPlane, useTool } from '../../../../stores/tool';
 import {
   CircularMoveCommand,
-  delegator,
+  delegator as nonMovementCommandDelegator,
   interpretCommand,
   LinearMoveCommand,
 } from './commandUtil';
@@ -103,7 +103,6 @@ const setupCircularMoveAndReturnAngle = (
 
   // get cross product of vectors between start and end to see if
   // it's +ve or -ve to check if we need to correct for the rotation direction
-  console.debug(start);
   const endProj = end.clone().sub(centre);
   const deltaAngle = startOffset.angleTo(endProj);
   const cross = endProj.cross(startOffset);
@@ -197,9 +196,9 @@ export const createAnimator = (
         if (!cmd) {
           // move onto next command since it is clearly not needed
           state = ToolState.STOPPED;
-        } else if (cmd.type in delegator) {
+        } else if (cmd.type in nonMovementCommandDelegator) {
           // set data about the drill for non-move commands
-          delegator[cmd.type](tool);
+          nonMovementCommandDelegator[cmd.type](tool);
           state = ToolState.STOPPED;
         } else {
           // movement commands
@@ -271,6 +270,7 @@ export const createAnimator = (
           toolMesh.position.lerpVectors(start, end, t);
           coords.setVec(toolMesh.position);
         } else {
+          // circular interpolation
           const offset = startOffset
             .clone()
             .applyAxisAngle(rotAxis, distance * t);
