@@ -11,7 +11,7 @@ import { useCursor, useGCodeFile } from '../../../../stores/code';
 import { RotationPlane, useTool } from '../../../../stores/tool';
 import {
   CircularMoveCommand,
-  delegator as nonMovementCommandDelegator,
+  nonMovementCommandDelegator,
   interpretCommand,
   LinearMoveCommand,
 } from './commandUtil';
@@ -27,6 +27,11 @@ enum ToolState {
   STOPPED,
 }
 
+/**
+ * Find the start and end vectors to interpolate between
+ * and calculate the distance to interpolate.
+ * @returns Distance to interpolate
+ */
 const setupLinearMoveAndReturnDistance = (
   { x, y, z }: LinearMoveCommand,
   toolMesh: Tool,
@@ -41,6 +46,12 @@ const setupLinearMoveAndReturnDistance = (
   return start.distanceTo(end);
 };
 
+/**
+ * Take the i, j, k offsets from the command and infer the centre
+ * of the circle, using i, j, k to form the offset vector as well.
+ * Then we can also set the rotation plane and then the rotation axis,
+ * depending on which plane we are rotating in.
+ */
 const setCentreAndRotationAxisAndOffset = (
   centre: Vector3,
   rotAxis: Vector3,
@@ -76,6 +87,12 @@ const setCentreAndRotationAxisAndOffset = (
   }
 };
 
+/**
+ * Set the start, end, centre, start offset (centre -> start) and
+ * rotation axis vectors, from the command data and the rotation plane.
+ * Then calculate the angle to rotate.
+ * @returns Angle to rotate (corrected for sign)
+ */
 const setupCircularMoveAndReturnAngle = (
   { x, y, z, i, j, k }: CircularMoveCommand,
   toolMesh: Tool,

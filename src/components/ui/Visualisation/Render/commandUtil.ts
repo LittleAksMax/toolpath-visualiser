@@ -155,7 +155,7 @@ type DelegatorType = {
   [cmd: string]: (t: ToolState) => void;
 };
 
-export const delegator: DelegatorType = {
+export const nonMovementCommandDelegator: DelegatorType = {
   G17: (t) => t.setRotPlane('XY'),
   G18: (t) => t.setRotPlane('ZX'),
   G19: (t) => t.setRotPlane('YZ'),
